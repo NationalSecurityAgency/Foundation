@@ -217,7 +217,10 @@ fn absorb(rate_bytes: usize, padded_message: &[u8]) -> State {
 /// `Keccak-p`.
 #[allow(clippy::needless_range_loop)]
 fn squeeze(rate_bytes: usize, digest_size: usize, mut state: State) -> Vec<u8> {
-    assert!(rate_bytes.is_multiple_of(8), "Rate must be a multiple of 64.");
+    assert!(
+        rate_bytes.is_multiple_of(8),
+        "Rate must be a multiple of 64."
+    );
     let mut hash = Vec::new();
     while hash.len() < digest_size {
         for x in 0..5 {
