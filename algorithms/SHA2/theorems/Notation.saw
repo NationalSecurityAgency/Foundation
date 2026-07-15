@@ -1,0 +1,90 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `algorithms/SHA2/Notation.cry`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+// Import the Cryptol specification for SHA-2's preprocessing functions.
+import "../Notation.cry";
+
+let verify_hexDigitIs4Bits : TopLevel Theorem =
+    proveit {{ hexDigitIs4Bits }} rme;
+
+let verify_hexDigitExample : TopLevel Theorem =
+    proveit {{ hexDigitExample }} rme;
+
+let verify_wordExample : TopLevel Theorem =
+    proveit {{ wordExample }} rme;
+
+let verify_integerExample : TopLevel Theorem =
+    proveit {{ integerExample }} rme;
+
+let verify_ROTRIsRightCircularShift (n : Int, w : Int) : TopLevel Theorem =
+    proveit {{ ROTRIsRightCircularShift`{n, w} }} rme;
+
+let verify_ROTLIsLeftCircularShift (n : Int, w : Int) : TopLevel Theorem =
+    proveit {{ ROTLIsLeftCircularShift`{n, w} }} rme;
+
+let verify_ROTLAsROTR (n : Int, w : Int) : TopLevel Theorem =
+    proveit {{ ROTLAsROTR`{n, w} }} rme;
+
+let verify_ROTRAsROTL (n : Int, w : Int) : TopLevel Theorem =
+    proveit {{ ROTRAsROTL`{n, w} }} rme;
+
+/*
+ * Verify public properties of `algorithms::SHA2::Notation`.
+ */
+let main : TopLevel [Theorem] = do {
+  hexDigitIs4Bits_lemma  <- verify_hexDigitIs4Bits;
+  hexDigitExample_lemma <- verify_hexDigitExample;
+  wordExample_lemma     <- verify_wordExample;
+  integerExample_lemma  <- verify_integerExample;
+  ROTRIsRightCircularShift_lemmas <- for [ ( 2, 32), (13, 32), (22, 32)
+                                         , ( 6, 32), (11, 32), (25, 32)
+                                         , ( 7, 32), (18, 32)
+                                         , (17, 32), (19, 32)
+                                         , (28, 64), (34, 64), (39, 64)
+                                         , (14, 64), (18, 64), (41, 64)
+                                         , ( 1, 64), ( 8, 64)
+                                         , (19, 64), (61, 64)
+                                         ] verify_ROTRIsRightCircularShift;
+  ROTLIsLeftCircularShift_lemmas <- for [ (1, 32), (5, 32), (30, 32) ]
+                                        verify_ROTRIsRightCircularShift;
+  ROTLAsROTR_lemmas <- for [ ( 2, 32), (13, 32), (22, 32)
+                           , ( 6, 32), (11, 32), (25, 32)
+                           , ( 7, 32), (18, 32)
+                           , (17, 32), (19, 32)
+                           , (28, 64), (34, 64), (39, 64)
+                           , (14, 64), (18, 64), (41, 64)
+                           , ( 1, 64), ( 8, 64)
+                           , (19, 64), (61, 64)
+                           , (1, 32), (5, 32), (30, 32)
+                           ] verify_ROTLAsROTR;
+  ROTRAsROTL_lemmas <- for [ ( 2, 32), (13, 32), (22, 32)
+                           , ( 6, 32), (11, 32), (25, 32)
+                           , ( 7, 32), (18, 32)
+                           , (17, 32), (19, 32)
+                           , (28, 64), (34, 64), (39, 64)
+                           , (14, 64), (18, 64), (41, 64)
+                           , ( 1, 64), ( 8, 64)
+                           , (19, 64), (61, 64)
+                           , (1, 32), (5, 32), (30, 32)
+                           ] verify_ROTRAsROTL;
+
+  summarize_verification;
+
+  return
+    (foldl concat [ hexDigitIs4Bits_lemma
+                  , hexDigitExample_lemma
+                  , wordExample_lemma
+                  , integerExample_lemma
+                  ]
+      [ ROTRIsRightCircularShift_lemmas
+      , ROTLIsLeftCircularShift_lemmas
+      , ROTLAsROTR_lemmas
+      , ROTRAsROTL_lemmas
+      ]
+    );
+};

@@ -1,0 +1,38 @@
+/*
+ * Description: This module provides common matrix operations for Rings.
+ */
+
+module shared::algebra::Ring::Operators::Matrix where
+
+import interface shared::algebra::Ring::Interface
+interface constraint Eq RingElement
+
+import shared::algebra::Ring::Operators::Scalar { interface Interface }
+import shared::algebra::Ring::Operators::Vector { interface Interface }
+
+/** Matrix type of `rows` by `cols`. */
+type Matrix rows columns = [rows](Vector columns)
+
+/** Identity matrix */
+I : {n} Matrix n n
+I @ i @ j = if i == j then one else zro
+
+/** Matrix addition */
+infixl 80 #+
+(#+) : {rows, cols} Matrix rows cols -> Matrix rows cols -> Matrix rows cols
+(#+) = zipWith (|+)
+
+/** Matrix subtraction */
+infixl 80 #-
+(#-) : {rows, cols} Matrix rows cols -> Matrix rows cols -> Matrix rows cols
+(#-) = zipWith (|-)
+
+/** Matrix multiplication */
+infixl 90 #*
+(#*) :
+    {rows, mids, cols}
+    (fin mids)
+ => Matrix rows mids -> Matrix mids cols -> Matrix rows cols
+A #* B = C
+  where
+    C @ i @ j = (A @ i) |*  (transpose B @ j)

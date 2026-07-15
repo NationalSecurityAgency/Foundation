@@ -1,0 +1,44 @@
+/* 
+ * Description: This module is for utility functions related to the
+ * transformation of types.
+ */
+
+module shared::common::utils::TypeCoercion where
+
+/**
+ * `BVtoZ` transforms a bit vector into an `Integer` modulo `p`.
+ */
+BVtoZ : {p, a} (fin p, p > 0, fin a, a <= width p) => [a] -> Z p
+BVtoZ x = fromInteger (toInteger x)
+
+/**
+ * `ZtoBV` transforms an `Integer` modulo `p` into a bit vector.
+ */
+ZtoBV : {p, a} (fin p, p > 0, fin a, a >= width p) => Z p -> [a]
+ZtoBV x = fromInteger (fromZ x)
+
+/**
+ * The following property confirms that `ZtoBV` inverts `BVtoZ`.
+ * ```
+ * :prove inverseZBV`{71}
+ * :prove inverseZBV`{557}
+ * ```
+ */
+inverseZBV : {p} (fin p, p > 0) => [width p] -> Bool
+property inverseZBV x =
+    x < `p ==> ZtoBV`{p, width p} (BVtoZ`{p, width p} x) == x
+
+/** The following property confirms that `BVtoZ` inverts `ZtoBV`.
+ * ```
+ * :prove inverseBVZ`{71}
+ * :prove inverseZBV`{557}
+ */
+inverseBVZ : {p} (fin p, p > 0) => Z p -> Bool
+property inverseBVZ x =
+    BVtoZ`{p, width p} (ZtoBV`{p, width p} x) == x 
+
+/**
+ * `ZtoZ` transforms an `Integer` modulo `p` into an `Integer` modulo `q`.
+ */
+ZtoZ : {p, q} (fin p, fin q, p > 0, p <= q) => Z p -> Z q
+ZtoZ x = fromInteger (fromZ x)

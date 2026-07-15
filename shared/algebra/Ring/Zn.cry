@@ -1,0 +1,23 @@
+/*
+ * Description: This module provides a `Ring` for integers modulo `n`.
+ */
+
+module shared::algebra::Ring::Zn where
+
+parameter
+  /** base for modular integer ring */
+  type n : #
+  type constraint (fin n, n >= 1)
+
+/** `Arithmetic` instance for `Z n` */
+submodule Arithmetic = shared::algebra::Ring::Primitive::Functor where
+  type RingElement = Z n
+
+/** Scalar operators for `Z n` */
+submodule Scalar = shared::algebra::Ring::Operators::Scalar { submodule Arithmetic }
+
+/** Vector operators for `Z n` */
+submodule Vector = shared::algebra::Ring::Operators::Vector { submodule Arithmetic }
+
+/** Matrix operators for `Z n` */
+submodule Matrix = shared::algebra::Ring::Operators::Matrix { submodule Arithmetic }

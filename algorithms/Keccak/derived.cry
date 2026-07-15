@@ -1,0 +1,103 @@
+/*
+ * Description: This is a Cryptol spec for several helper functions
+ * used to define the SHA-3 derived hash functions `cSHAKE`, `KMAC`,
+ * `TupleHash`, and `ParallelHash` [NIST-SP-800-185].
+ */
+
+module algorithms::Keccak::derived where
+
+/**
+ * For a natural number `i` ranging from 0 to 255, `enc8 i` is the
+ * byte encoding of `i`, with bit `0` being the low-order bit of the
+ * byte [NIST-SP-800-185 Section 2.2]. This function differs in that
+ * it will encode an entire sequence of bytes rather than just one.
+ */
+enc8 : {n} [n][8] -> [n][8]
+enc8 = map reverse
+
+/**
+ * This computes the number of bits needed to encode `x`
+ * [NIST-SP-800-185 Section 2.3.1].
+ */ 
+type EncodeSize x = 8 * (1 + max 1 (width x /^ 8))
+
+/**
+ * This function encodes an integer `x` as a byte string in a way that
+ * can be unambiguously parsed from the end of the string by inserting
+ * the length of the byte string after the representation of `x`
+ * [NIST-SP-800-185 Section 2.3.1].
+ */
+right_encode : {x} (x < 2 ^^ 2040) => [EncodeSize x]
+right_encode = join (𝑂 # 𝑂np1)
+  where
+    type n = max 1 (width x /^ 8)
+    𝑂      = enc8 (groupBy`{8, n} `x)
+    𝑂np1   = enc8 [fromInteger `n]
+
+/** `right_encode` example [NIST-SP-800-185 Section 2.3.1] */
+property right_encode_example =
+    right_encode`{0} == 0b00000000_10000000
+
+/**
+ * This function encodes an integer `x` as a byte string in a way that
+ * can be unambiguously parsed from the beginning of the string by
+ * inserting the length of the byte string before the representation
+ * of `x` [NIST-SP-800-185 Section 2.3.1].
+ */
+left_encode : {x} (x < 2 ^^ 2040) => [EncodeSize x]
+left_encode = join (𝑂0 # 𝑂)
+  where
+    type n = max 1 (width x /^ 8)
+    𝑂      = enc8 (groupBy`{8} `x)
+    𝑂0     = enc8 [fromInteger `n]
+
+/** `left_encode` example [NIST-SP-800-185 Section 2.3.1] */
+property left_encode_example =
+    left_encode`{0} == 0b10000000_00000000
+
+/**
+ * This function encodes bit strings in a way that can be parsed
+ * unambiguously from the beginning of the string `S` [NIST-SP-800-185
+ * Section 2.3.2].
+ */
+encode_string : 
+    {x} (x < 2 ^^ 2040)
+ => [x] -> [EncodeSize x + x]
+encode_string S = left_encode`{x} # S
+
+/** `encode_string` example [NIST-SP-800-185 Section 2.3.2] */
+property encode_string_example =
+    encode_string [] == 0b10000000_00000000
+
+/**
+ * The `bytepad(X, w)` function prepends an encoding of the integer
+ * `w` to the input string `X`, then pads the result with zeros until
+ * it is a byte string whose length in bytes is a multiple of `w`.  In
+ * general, `bytepad` is intended to be used on encoded strings. The
+ * byte string `bytepad(encode_string(S), w)` can be parsed
+ * unambiguously from its beginning, whereas bytepad does not provide
+ * unambiguous padding for all input strings [NIST-SP-800-185 Section
+ * 2.3.3].
+ */
+bytepad : 
+    {w, a}
+    (w > 0, w < 2 ^^ 2040, fin a)
+ => [a] 
+ -> [ EncodeSize a                  // `left_encode`
+    + a                             // `X`
+    + (EncodeSize a + a) %^ (w * 8)  // pad to next multiple of `w`
+    ]
+bytepad X = left_encode`{w} # X # zero
+
+/**
+ * Let parameters `a` and `b` be non-negative integers that denote a
+ * specific position in a bit string `X`. Informally, the
+ * `substring(X, a, b)` function returns a substring from the bit
+ * string `X` containing the values at bit positions `a, a+1, ...,
+ * b−1`, inclusive. Note that all bit positions in the input and
+ * output strings are indexed from zero. Thus, the first bit in a
+ * string is in position `0`, and the last bit in an `n`-bit string is
+ * in position `n−1` [NIST-SP-800-185 Section 2.3.4].
+ */
+substring : {a, b, n} (fin a, a <= b, b <= n) => [n] -> [b - a]
+substring X = X @@ [ a ..< b ]

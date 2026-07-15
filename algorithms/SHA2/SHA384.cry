@@ -1,0 +1,32 @@
+/*
+ * Description: This module specifies the Secure Hash Algorithm with a
+ * digest size of 384 bits (SHA-384) [FIPS-PUB-180-4 Section 6.5].
+ */
+module algorithms::SHA2::SHA384 = packaging::Hash where
+
+type _BlockSize  = 1024
+type _DigestSize = 384
+type _UpperLimit = 128
+
+_hash = SHA384::hash
+
+import algorithms::SHA2::Notation (ROTR, SHR)
+import algorithms::SHA2::Preprocessing (H0_384)
+import algorithms::SHA2::Functions ( SIGMA_512_0
+                                  , SIGMA_512_1
+                                  , sigma_512_0
+                                  , sigma_512_1
+                                  , K_512)
+
+import algorithms::SHA2::Main as SHA384 where
+  type d = 384
+  type w = 64
+  type Klen = 80
+
+  H0 = H0_384
+  K = K_512
+
+  SIGMA_0 = SIGMA_512_0
+  SIGMA_1 = SIGMA_512_1
+  sigma_0 = sigma_512_0
+  sigma_1 = sigma_512_1

@@ -1,0 +1,33 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `shared::CRC::Tests`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+import "../Tests.cry";
+
+/*
+ * Verify public properties of `shared::CRC::Tests`.
+ */
+let main : TopLevel [Theorem] = do {
+  CRC8_SAE_J1850PassesTests_lemma <- checkit {{ CRC8_SAE_J1850PassesTests }};
+  CRC8_H2FPassesTests_lemma <- checkit {{ CRC8_H2FPassesTests }};
+  CRC16_CCITT_FALSEPassesTests_lemma <- checkit {{ CRC16_CCITT_FALSEPassesTests }};
+  CRC16_ARCPassesTests_lemma <- checkit {{ CRC16_ARCPassesTests }};
+  CRC32_IEEE_802_3_EthernetPassesTests_lemma <- checkit {{ CRC32_IEEE_802_3_EthernetPassesTests }};
+  CRC32_P4PassesTests_lemma <- checkit {{ CRC32_P4PassesTests }};
+  CRC64_ECMAPassesTests_lemma <- checkit {{ CRC64_ECMAPassesTests }};
+
+  summarize_verification;
+
+  return [ CRC8_SAE_J1850PassesTests_lemma
+         , CRC8_H2FPassesTests_lemma
+         , CRC16_CCITT_FALSEPassesTests_lemma
+         , CRC16_ARCPassesTests_lemma
+         , CRC32_IEEE_802_3_EthernetPassesTests_lemma
+         , CRC32_P4PassesTests_lemma
+         , CRC64_ECMAPassesTests_lemma
+         ];
+};

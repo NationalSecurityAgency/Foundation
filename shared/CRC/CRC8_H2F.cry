@@ -1,0 +1,15 @@
+/*
+ * Description: This module implements the CRC8H2F Cyclic Redundancy
+ * Check (CRC) [AUTOSAR Section 7.2.1.2].
+ */
+
+module shared::CRC::CRC8_H2F = shared::CRC::Main where
+
+type CRCResultWidth = 8
+polynomial          = [True] # 0x2F
+initialValue        = 0xFF
+inputDataReflected  = False
+resultDataReflected = False
+XORValue            = 0xFF
+check               = 0xDF
+magicCheck          = 0x42

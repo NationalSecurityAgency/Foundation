@@ -1,0 +1,33 @@
+/*
+ * Description: This module provides infix operators for common Field
+ * element operations.
+ */
+
+module shared::algebra::Field::Operators::Scalar where
+
+import interface shared::algebra::Field::Interface
+
+/** addition */
+infixl 80 .+
+(.+) : FieldElement -> FieldElement -> FieldElement
+(.+) = add
+
+/** subtraction */
+infixl 80 .-
+(.-) : FieldElement -> FieldElement -> FieldElement
+x .- y = x .+ (neg y)
+
+/** multiplication */
+infixl 90 .*
+(.*) : FieldElement -> FieldElement -> FieldElement
+(.*) = mul
+
+/** division */
+infixl 90 ./
+(./) : FieldElement -> FieldElement -> FieldElement
+(./) = div
+
+/** exponentiation */
+infixr 95 .^^
+(.^^) : {e} (Cmp e, Integral e, Literal 1 e) => FieldElement -> e -> FieldElement
+(.^^) = exp

@@ -1,0 +1,65 @@
+/*
+ * Description: This module provides an interface for a `Ring` type. A
+ * ring is parameterized by a suite of additive and multiplicative
+ * operations on an element type, but, unlike a `Field`,
+ * multiplication need not be commutative and multiplicative inverses
+ * don't need to exist.
+ */
+
+interface module shared::algebra::Ring::Interface where
+
+  /** element type */
+  type RingElement : *
+
+  /** membership predicate */
+  mem : RingElement -> Bool
+
+  /** additive operation */
+  add : RingElement -> RingElement -> RingElement
+  /** additive identity */
+  zro : RingElement
+  /** additive inverse */
+  neg : RingElement -> RingElement
+
+  /** multiplicative operation */
+  mul : RingElement -> RingElement -> RingElement
+  /** multiplicative identity */
+  one : RingElement
+
+  /**
+   * exponentiation - provided here to allow a performant
+   * exponentiation operation to be supplied (such as Cryptol's
+   * built-in `^^`). If a performant operation is not available,
+   * exponentiation can be implemented using the following definition:
+   *
+   * ```cryptol
+   * exp :
+   *     {e}
+   *     (Cmp e, Integral e, Literal 1 e)
+   *  => RingElement -> e -> RingElement
+   * exp x k =
+   *     if k < 0  then error "negative exponent"
+   *      | k == 0 then one
+   *     else           mul x (exp x (k - 1))
+   * ```
+   * 
+   * Or, using Montgomery multiplication, implemented as:
+   *
+   * ```cryptol
+   * exp :
+   *     {e}
+   *     (Cmp e, Integral e, Literal 1 e)
+   *  => RingElement -> e -> RingElement
+   * exp x k = if k < 0 then error "negative exponent" else pow k
+   *   where
+   *     sq y  = mul y y
+   *     odd y = y % fromInteger 2 == 1
+   *     pow i = if i == 0 then one
+   *              | i == 1 then x
+   *              | odd i  then mul x i'
+   *             else i'
+   *       where i' = sq (pow (i / fromInteger 2))
+   * ```
+   */
+
+  exp : {e} (Cmp e, Integral e, Literal 1 e) => RingElement -> e -> RingElement

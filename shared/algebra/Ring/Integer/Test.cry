@@ -1,0 +1,13 @@
+/*
+ * Description: This module demonstrates how to use the
+ * `Ring::Integer` module.
+ */
+ 
+module shared::algebra::Ring::Integer::Test where
+
+import shared::algebra::Ring::Integer as Integer
+import submodule Integer::Arithmetic
+import submodule Integer::Scalar
+
+property mul_check = 12 .* 10 == 120
+property exp_check a e = e > 0 ==> exp a e == a ^^ e

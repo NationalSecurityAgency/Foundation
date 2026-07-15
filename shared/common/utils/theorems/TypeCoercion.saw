@@ -1,0 +1,33 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `shared/common/utils/TypeCoercion.cry`.
+ */
+
+// Include common SAW utilities.
+include "../../../../shared/SAW/utils.saw";
+
+// Import the Cryptol specification for type coercion functions.
+import "../TypeCoercion.cry";
+
+let verify_inverseZBV (p : Int) : TopLevel Theorem =
+    proveit {{ inverseZBV`{p} }} w4;
+
+let verify_inverseBVZ (p : Int) : TopLevel Theorem =
+    proveit {{ inverseBVZ`{p} }} w4;
+
+/*
+ * Verify public properties of `shared::common::utils::TypeCoercion`.
+ */
+let main : TopLevel [Theorem] = do {
+  inverseZBV_lemmas <- for [71, 557] verify_inverseZBV;
+  inverseBVZ_lemmas <- for [71, 557] verify_inverseBVZ;
+
+  summarize_verification;
+
+  return
+    (foldl concat []
+      [ inverseZBV_lemmas
+      , inverseBVZ_lemmas
+      ]
+    );
+};

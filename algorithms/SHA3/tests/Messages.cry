@@ -1,0 +1,27 @@
+/*
+ * Description: This module holds common test messages for SHA3 test
+ * vectors.
+ */
+
+module algorithms::SHA3::tests::Messages where
+
+/*
+ * [Bit Examples] uses the same six bit messages to test all SHA3
+ * variants. There are differences in the representation of sequences
+ * of bits (binary) between Cryptol's interpreter (big endian) and
+ * SHA-3's specification (little endian). Specifically, "In binary
+ * representation, bytes are written with the low-order bit first,
+ * while in hexadecimal representation, bytes are written with the
+ * high-order digit first. E.g., 0x01 = 10000000 and 0x80 = 00000001."
+ * [NIST-SP-800-185 Section 2]. The choice being made here is that, in
+ * the messages below, `0b11001` represents the `11001` text provided
+ * in [Bit Examples], for example, and reordering is necessary to
+ * move between sequences of bits and a hexadecimal representation.
+ */
+
+Msg0    = []
+Msg5    = 0b11001
+Msg30   = 0b110010100001101011011110100110
+Msg1600 = join (repeat`{50} 0b11000101110001011100010111000101)
+Msg1605 = Msg1600 # 0b11000
+Msg1630 = Msg1600 # 0b110001011100010111000101110001

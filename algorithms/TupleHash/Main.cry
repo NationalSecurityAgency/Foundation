@@ -1,0 +1,138 @@
+/*
+ * Description: This module provides TupleHash functions
+ * [NIST-SP-800-185 Section 5].
+ */
+
+module algorithms::TupleHash::Main where
+
+import algorithms::Keccak::derived (encode_string, right_encode)
+import algorithms::Keccak::Main (bitReordering)
+import algorithms::cSHAKE::Main (cSHAKE128, cSHAKE256)
+
+/**
+ * TupleHash is designed to provide a generic, misuse-resistant way to
+ * combine a sequence of strings for hashing such that, for example, a
+ * TupleHash computed on the tuple ("abc" ,"d") will produce a
+ * different hash value than a TupleHash computed on the tuple
+ * ("ab","cd"), even though all the remaining input parameters are
+ * kept the same, and the two resulting concatenated strings, without
+ * string encoding, are identical [NIST-SP-800-185 Section 5.1].
+ *
+ * Inputs:
+ *   `X`: A sequence processed from a tuple of zero or more bit
+ *        strings, any or all of which may be an empty
+ *        string. `addElementToTuple` is provided in this module to
+ *        assist with creating such a sequence.
+ *   `S`: A customization bit string of any length, including zero. If
+ *        no customization is desired, set `S` to the empty string.
+ *
+ * Notable types:
+ *   `L`: An integer representing the requested output length in
+ *        bits.
+ */
+TupleHash128 :
+    { L, a, s }
+    ( L < 2 ^^ 2040, fin a, s < 2 ^^ 2040)
+ => [a] -> [s] -> [L]
+TupleHash128 X S =
+    cSHAKE128`{L} newX (join "TupleHash") S
+  where
+    newX = bitReordering (X # right_encode`{L})
+
+/**
+ * TupleHash is designed to provide a generic, misuse-resistant way to
+ * combine a sequence of strings for hashing such that, for example, a
+ * TupleHash computed on the tuple ("abc" ,"d") will produce a
+ * different hash value than a TupleHash computed on the tuple
+ * ("ab","cd"), even though all the remaining input parameters are
+ * kept the same, and the two resulting concatenated strings, without
+ * string encoding, are identical [NIST-SP-800-185 Section 5.1].
+ *
+ * Inputs:
+ *   `X`: A sequence processed from a tuple of zero or more bit
+ *        strings, any or all of which may be an empty
+ *        string. `addElementToTuple` is provided in this module to
+ *        assist with creating such a sequence.
+ *   `S`: A customization bit string of any length, including zero. If
+ *        no customization is desired, set `S` to the empty string.
+ *
+ * Notable types:
+ *   `L`: An integer representing the requested output length in
+ *        bits.
+ */
+TupleHash256 :
+    { L, a, s }
+    ( L < 2 ^^ 2040, fin a, s < 2 ^^ 2040)
+ => [a] -> [s] -> [L]
+TupleHash256 X S =
+    cSHAKE256`{L} newX (join "TupleHash") S
+  where
+    newX = bitReordering (X # right_encode`{L})
+
+/**
+ * This is a variant of `TupleHash128` as an XOF [NIST-SP-800-185
+ * Section 5.3.1].
+ *
+ * Inputs:
+ *   `X`: A sequence processed from a tuple of zero or more bit
+ *        strings, any or all of which may be an empty
+ *        string. `addElementToTuple` is provided in this module to
+ *        assist with creating such a sequence.
+ *   `S`: A customization bit string of any length, including zero. If
+ *        no customization is desired, set `S` to the empty string.
+ *
+ * Notable types:
+ *   `L`: An integer representing the requested output length in
+ *        bits.
+ */
+TupleHashXOF128 :
+    { L, a, s }
+    ( fin a, s < 2 ^^ 2040)
+ => [a] -> [s] -> [L]
+TupleHashXOF128 X S =
+    cSHAKE128`{L} newX (join "TupleHash") S
+  where
+    newX = bitReordering (X # right_encode`{0})
+
+/**
+ * This is a variant of `TupleHash256` as an XOF [NIST-SP-800-185
+ * Section 5.3.1].
+ *
+ * Inputs:
+ *   `X`: A sequence processed from a tuple of zero or more bit
+ *        strings, any or all of which may be an empty
+ *        string. `addElementToTuple` is provided in this module to
+ *        assist with creating such a sequence.
+ *   `S`: A customization bit string of any length, including zero. If
+ *        no customization is desired, set `S` to the empty string.
+ *
+ * Notable types:
+ *   `L`: An integer representing the requested output length in
+ *        bits.
+ */
+TupleHashXOF256 :
+    { L, a, s }
+    ( fin a, s < 2 ^^ 2040)
+ => [a] -> [s] -> [L]
+TupleHashXOF256 X S =
+    cSHAKE256`{L} newX (join "TupleHash") S
+  where
+    newX = bitReordering (X # right_encode`{0})
+
+/**
+ * This function assists TupleHash by accumulating strings of
+ * different sizes, one at a time, into a sequence appropriate for
+ * input into TupleHash. For example:
+ * ```cryptol
+ * A  = ( 0x000102, 0x101112131415, 0x202122232425262728 )
+ * X0 = addElementToTuple [] A.0
+ * X1 = addElementToTuple X0 A.1
+ * X2 = addElementToTuple X1 A.2
+ * ```
+ */
+addElementToTuple :
+    { a, b }
+    ( fin a, b < 2 ^^ 2040 )
+ => [a] -> [b] -> [8 * (1 + max 1 (width b /^ 8)) + b + a]
+addElementToTuple tuple element =
+    tuple # encode_string (bitReordering element)

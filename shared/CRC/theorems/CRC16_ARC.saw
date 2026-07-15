@@ -1,0 +1,50 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties about
+ * CRC16 ARC.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+// Import Cryptol specification for CRC16 ARC.
+import "../CRC16_ARC.cry" as CRC16_ARC;
+
+let verify_magicCheckCorrect : TopLevel Theorem =
+    proveit {{ CRC16_ARC::magicCheckCorrect`{8} }} rme;
+
+let verify_checkCorrect : TopLevel Theorem =
+    proveit {{ CRC16_ARC::checkCorrect }} rme;
+
+let verify_reflectionReverse : TopLevel Theorem =
+    proveit {{ CRC16_ARC::reflectionReverse }} rme;
+
+let verify_reflectionTests : TopLevel Theorem =
+    proveit {{ CRC16_ARC::reflectionTests }} rme;
+
+let verify_CRCUpdateCorrect : TopLevel Theorem =
+    proveit {{ CRC16_ARC::CRCUpdateCorrect`{8, 8} }} rme;
+
+let verify_CRCUpdateTest : TopLevel Theorem =
+    proveit {{ CRC16_ARC::CRCUpdateTest }} rme;
+
+/*
+ * Verify public properties of `shared::CRC::CRC16_ARC`.
+ */
+let main : TopLevel [Theorem] = do {
+  magicCheckCorrect_lemma <- verify_magicCheckCorrect;
+  checkCorrect_lemma <- verify_checkCorrect;
+  reflectionReverse_lemma <- verify_reflectionReverse;
+  reflectionTests_lemma <- verify_reflectionTests;
+  CRCUpdateCorrect_lemma <- verify_CRCUpdateCorrect;
+  CRCUpdateTest_lemma <- verify_CRCUpdateTest;
+
+  summarize_verification;
+
+  return [ magicCheckCorrect_lemma
+         , checkCorrect_lemma
+         , reflectionReverse_lemma
+         , reflectionTests_lemma
+         , CRCUpdateCorrect_lemma
+         , CRCUpdateTest_lemma
+         ];
+};

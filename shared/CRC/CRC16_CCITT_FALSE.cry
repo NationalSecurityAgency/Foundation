@@ -1,0 +1,15 @@
+/*
+ * Description: This module implements the CRC16 CCITT-FALSE Cyclic
+ * Redundancy Check (CRC) [AUTOSAR Section 7.2.2.1].
+ */
+
+module shared::CRC::CRC16_CCITT_FALSE = shared::CRC::Main where
+
+type CRCResultWidth = 16
+polynomial          = [True] # 0x1021
+initialValue        = 0xFFFF
+inputDataReflected  = False
+resultDataReflected = False
+XORValue            = 0x0000
+check               = 0x29B1
+magicCheck          = 0x0000

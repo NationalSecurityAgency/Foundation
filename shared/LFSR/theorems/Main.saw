@@ -1,0 +1,25 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `shared::LFSR::Main`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+import "../Main.cry";
+
+/*
+ * Verify public properties of `shared::LFSR::Main`.
+ */
+let main : TopLevel [Theorem] = do {
+  FibonacciSequenceTest_lemma <- checkit {{ FibonacciSequenceTest }};
+  parityEquivalence_lemma <- proveit {{ parityEquivalence`{4, 10} }} rme;
+  selectOnBitIsAND_lemma <- proveit {{ selectOnBitIsAND`{32} }} rme;
+
+  summarize_verification;
+
+  return [ FibonacciSequenceTest_lemma
+         , parityEquivalence_lemma
+         , selectOnBitIsAND_lemma
+         ];
+};

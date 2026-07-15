@@ -1,0 +1,39 @@
+/*
+ * Description: This is a Cryptol specification of the types needed to
+ * specify the Advanced Encryption Standard (AES) [FIPS-PUB-197].
+ */
+
+module algorithms::AES::Types where
+
+/**
+ * This constraint enforces the standard key sizes of 128, 192, and
+ * 256-bits [FIPS-PUB-197 Sections 1, 5, and 6.1].
+ */
+type constraint Key k = (fin k, k % 64 == 0, k / 64 >= 2, k / 64 <= 4)
+
+/**
+ * This sequence of bytes comprises the input, output, State, and
+ * Round Key [FIPS-PUB-197 Section 2.1].
+ */
+type Block = [16][8]
+
+/**
+ * This sequence of bytes represents a 32-bit word [FIPS-PUB-197
+ * Section 2.1]. `AESWord` is used to avoid conflicting with Cryptol's
+ * built-in `Word`.
+ */
+type AESWord = [4][8]
+
+/**
+ * This type represents the number of 32-bit words comprising the
+ * key. `Nk` is assigned to 4, 6, and 8 for `AES128`, `AES192`, and
+ * `AES256`, respectively [FIPS-PUB-197 Sections 2.3 and 5].
+ */
+type Nk k = k / 32
+
+/**
+ * This type represents the number of rounds to perform. `Nr` is
+ * assigned to 10, 12, and 14 for `AES128`, `AES192`, and `AES256`,
+ * respectively [FIPS-PUB-197 Sections 2.3 and 5].
+ */
+type Nr k = Nk k + 6

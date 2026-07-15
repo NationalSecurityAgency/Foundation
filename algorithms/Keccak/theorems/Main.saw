@@ -1,0 +1,55 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `algorithms/Keccak/Main.cry`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+// Import the Cryptol specification for Keccak's main functions.
+import "../Main.cry";
+
+let verify_h2bTest : TopLevel Theorem =
+    proveit {{ h2bTest }} rme;
+
+let verify_h2bInvertsb2h (n : Int) : TopLevel Theorem =
+    proveit {{ h2bInvertsb2h`{n} }} rme;
+
+let verify_b2hInvertsh2b (n : Int, m : Int) : TopLevel Theorem =
+    proveit {{ b2hInvertsh2b`{n, m} }} rme;
+
+let verify_bitReorderingIsAnInvolution (a : Int) : TopLevel Theorem =
+    proveit {{ bitReorderingIsAnInvolution`{a} }} rme;
+
+let verify_bitReorderingInfIssue : TopLevel Theorem =
+    proveit {{ bitReorderingInfIssue }} rme;
+
+/*
+ * Verify public properties of `algorithms::Keccak::Main`.
+ */
+let main : TopLevel [Theorem] = do {
+  h2bTest_lemma        <- verify_h2bTest;
+  h2bInvertsb2h_lemmas <- for [ 0, 1, 10 ] verify_h2bInvertsb2h;
+  b2hInvertsh2b_lemmas <- for [ ( 0, 0 )
+                              , ( 0, 1 )
+                              , ( 1, 1 )
+                              , ( 7, 1 )
+                              , ( 8, 1 )
+                              , ( 101, 33 )
+                              ] verify_b2hInvertsh2b;
+  bitReorderingIsAnInvolution_lemmas <-
+      for [ 0, 1, 31, 32, 33, 100 ] verify_bitReorderingIsAnInvolution;
+  bitReorderingInfIssue_lemma <- verify_bitReorderingInfIssue;
+
+  summarize_verification;
+
+  return
+    (foldl concat [ ]
+      [ [ h2bTest_lemma ]
+      , h2bInvertsb2h_lemmas
+      , b2hInvertsh2b_lemmas
+      , bitReorderingIsAnInvolution_lemmas
+      , [ bitReorderingInfIssue_lemma ]
+      ]
+    );
+};

@@ -1,0 +1,60 @@
+/*
+ * Description: This is a Cryptol specification of the `KeyExpansion`
+ * method in the Advanced Encryption Standard (AES) [FIPS-PUB-197].
+ */
+
+module algorithms::AES::KeyExpansion where
+
+import algorithms::AES::Types
+import algorithms::AES::SBox (SBox)
+
+/**
+ * This table holds the word array for the round constant
+ * [FIPS-PUB-197 Sections 2.1 and 5.2]. Constants are used here rather
+ * than computing the values in place.
+ */
+Rcon : [11]AESWord
+Rcon = [ undefined
+       , [ 0x01, 0x00, 0x00, 0x00 ]
+       , [ 0x02, 0x00, 0x00, 0x00 ]
+       , [ 0x04, 0x00, 0x00, 0x00 ]
+       , [ 0x08, 0x00, 0x00, 0x00 ]
+       , [ 0x10, 0x00, 0x00, 0x00 ]
+       , [ 0x20, 0x00, 0x00, 0x00 ]
+       , [ 0x40, 0x00, 0x00, 0x00 ]
+       , [ 0x80, 0x00, 0x00, 0x00 ]
+       , [ 0x1b, 0x00, 0x00, 0x00 ]
+       , [ 0x36, 0x00, 0x00, 0x00 ]
+       ]
+
+/**
+ * This function takes a word [a0,a1,a2,a3] as input and performs a
+ * cyclic permutation, returning the word [a1,a2,a3,a0] [FIPS-PUB-197
+ * Section 5.2].
+ */
+RotWord : AESWord -> AESWord
+RotWord [ a0, a1, a2, a3 ] = [ a1, a2, a3, a0 ]
+
+/**
+ * This function takes a four-byte input word and applies the S-box to
+ * each of the four bytes to produce an output word [FIPS-PUB-197
+ * Section 5.2].
+ */
+SubWord : AESWord -> AESWord
+SubWord [ a0, a1, a2, a3 ] =
+    [ SBox @ a0, SBox @ a1, SBox @ a2, SBox @ a3 ]
+
+/**
+ * This is the main AES key expansion routine [FIPS-PUB-197 Section
+ * 5.2].
+ */
+foreign KeyExpansion : {k} (Key k) => [Nk k]AESWord -> [Nr k + 1]Block
+KeyExpansion key = split (split (join (join w)))
+  where
+    Nk = `(Nk k)
+    w  = [ if i < Nk                then key@i
+            | i % Nk == 0           then w@(i - Nk) ^ SubWord (RotWord (w@(i - 1))) ^ Rcon@(i / Nk)
+            | i % Nk == 4 /\ Nk > 6 then w@(i - Nk) ^ SubWord (w@(i - 1))
+           else                          w@(i - Nk) ^ w@(i - 1)
+         | i <- [ 0 ..< 4 * (Nr k + 1) ]
+         ] : [4 * (Nr k + 1)]AESWord

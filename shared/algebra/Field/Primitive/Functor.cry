@@ -1,0 +1,40 @@
+/*
+ * Description: This module provides a set of primitive Field
+ * operators.
+ */
+
+module shared::algebra::Field::Primitive::Functor where
+
+import interface shared::algebra::Field::Primitive::Interface as I
+
+type FieldElement = I::FieldElement
+
+mem : FieldElement -> Bool 
+mem _ = True
+
+add : FieldElement -> FieldElement -> FieldElement
+add = (+)
+
+zro : FieldElement
+zro = fromInteger 0
+
+neg : FieldElement -> FieldElement
+neg = negate
+
+mul : FieldElement -> FieldElement -> FieldElement
+mul = (*)
+
+one : FieldElement
+one = fromInteger 1
+
+rec : FieldElement -> FieldElement
+rec = recip
+
+div : FieldElement -> FieldElement -> FieldElement
+div = (/.)
+
+exp :
+    {e}
+    (Cmp e, Integral e, Literal 1 e)
+ => FieldElement -> e -> FieldElement
+exp x k = x ^^ k

@@ -1,0 +1,17 @@
+# See https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+
+updates:
+  - package-ecosystem: "cargo"
+    directories:
+      - "algorithms/AES/rust/KeyExpansion/"
+      - "algorithms/AES/rust/Cipher/"
+      - "shared/rust/ffi_utils/"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "github-actions"
+    directory: ".github/workflows"
+    schedule:
+      interval: "daily"

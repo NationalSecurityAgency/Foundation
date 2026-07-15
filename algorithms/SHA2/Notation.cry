@@ -1,0 +1,150 @@
+/*
+ * Description: This module captures Secure Hash Algorithm (SHA)
+ * notation [FIPS-PUB-180-4].
+ */
+
+module algorithms::SHA2::Notation where
+
+/**
+ * "A hex digit is an element of the set {0, 1,…, 9, a,…, f}. A hex
+ * digit is the representation of a 4-bit string [FIPS-PUB-180-4
+ * Section 3.1]."
+ */
+hexDigitIs4Bits : [4] -> Bool
+property hexDigitIs4Bits d = elem d [0x0 .. 0xf]
+
+/**
+ * "For example, the hex digit "7" represents the 4-bit string "0111",
+ * and the hex digit "a" represents the 4-bit string "1010"
+ * [FIPS-PUB-180-4 Section 3.1]."
+ */
+hexDigitExample : Bool
+property hexDigitExample = 0x7 == 0b0111 /\ 0xa == 0b1010
+
+/**
+ * "A word is a w-bit string that may be represented as a sequence of
+ * hex digits. To convert a word to hex digits, each 4-bit string is
+ * converted to its hex digit equivalent...For example, the 32-bit
+ * string
+ *     1010 0001 0000 0011 1111 1110 0010 0011
+ * can be expressed as "a103fe23", and the 64-bit string
+ *     1010 0001 0000 0011 1111 1110 0010 0011
+ *     0011 0010 1110 1111 0011 0000 0001 1010
+ * can be expressed as "a103fe2332ef301a" [FIPS-PUB-180-4 Section
+ * 3.1]."
+ */
+wordExample : Bool
+property wordExample =
+    0b1010_0001_0000_0011_1111_1110_0010_0011
+ == 0xa103fe23
+ /\ 0b1010_0001_0000_0011_1111_1110_0010_0011_0011_0010_1110_1111_0011_0000_0001_1010
+ == 0xa103fe2332ef301a
+
+/**
+ * "An integer between 0 and 2^^32-1 inclusive may be represented as a
+ * 32-bit word. The least significant four bits of the integer are
+ * represented by the right-most hex digit of the word
+ * representation. For example, the integer `291 == 2^^8 + 2^^5 + 2^^1
+ * + 2^^0 == 256 + 32 + 2 + 1` is represented by the hex word
+ * "00000123" [FIPS-PUB-180-4 Section 3.1]."
+ */
+integerExample : Bool
+property integerExample =
+    291 == 2^^8 + 2^^5 + 2^^1 + 2^^0
+ /\ 291 == 256 + 32 + 2 + 1
+ /\ 291 == 0x00000123
+
+/**
+ * The right shift operation [FIPS-PUB-180-4 Section 3.2].
+ */
+SHR : {n, w} (fin w, n < w) => Word w -> Word w
+SHR x = x >> `n
+
+/**
+ * The rotate right (circular right shift) operation [FIPS-PUB-180-4
+ * Section 3.2].
+ */
+ROTR : {n, w} (fin w, n < w) => Word w -> Word w
+ROTR x = x >>> `n
+
+/**
+ * "ROTR`{n} x, where x is a w-bit word and n is an integer with `0 <=
+ * n < w`, is defined by:
+ * ```cryptol
+ * ROTR`{n} x = (x >> `n) \/ (x << `(w - n))
+ * ```
+ * [FIPS-PUB-180-4 Section 3.2]". Proofs for instantiations used in
+ * the logical functions of SHA-224 and SHA-256 [FIPS-PUB-180-4
+ * Section 4.1.2].
+ * ```
+ * :prove ROTRIsRightCircularShift`{ 2, 32}
+ * :prove ROTRIsRightCircularShift`{13, 32}
+ * :prove ROTRIsRightCircularShift`{22, 32}
+ * :prove ROTRIsRightCircularShift`{ 6, 32}
+ * :prove ROTRIsRightCircularShift`{11, 32}
+ * :prove ROTRIsRightCircularShift`{25, 32}
+ * :prove ROTRIsRightCircularShift`{ 7, 32}
+ * :prove ROTRIsRightCircularShift`{18, 32}
+ * :prove ROTRIsRightCircularShift`{17, 32}
+ * :prove ROTRIsRightCircularShift`{19, 32}
+ * ```
+ * Proofs for instantiations used in the logical functions of SHA-384,
+ * SHA-512, SHA-512/224 and SHA-512/256 [FIPS-PUB-180-4 Section
+ * 4.1.3].
+ * ```
+ * :prove ROTRIsRightCircularShift`{28, 64}
+ * :prove ROTRIsRightCircularShift`{34, 64}
+ * :prove ROTRIsRightCircularShift`{39, 64}
+ * :prove ROTRIsRightCircularShift`{14, 64}
+ * :prove ROTRIsRightCircularShift`{18, 64}
+ * :prove ROTRIsRightCircularShift`{41, 64}
+ * :prove ROTRIsRightCircularShift`{ 1, 64}
+ * :prove ROTRIsRightCircularShift`{ 8, 64}
+ * :prove ROTRIsRightCircularShift`{19, 64}
+ * :prove ROTRIsRightCircularShift`{61, 64}
+ * ```
+ */
+ROTRIsRightCircularShift : {n, w} (fin w, n < w) => Word w -> Bool
+property ROTRIsRightCircularShift x =
+   ROTR`{n} x == (x >> `n) || (x << `(w - n))
+
+/**
+ * The rotate left (circular left shift) operation [FIPS-PUB-180-4
+ * Section 3.2].
+ */
+ROTL : {n, w} (fin w, n < w) => Word w -> Word w
+ROTL x = x <<< `n
+
+/**
+ * "ROTL`{n} x, where x is a w-bit word and n is an integer with `0 <=
+ * n < w`, is defined by:
+ * ```cryptol
+ * ROTL`{n} x = (x << `n) \/ (x >> `(w - n))
+ * ```
+ * [FIPS-PUB-180-4 Section 3.2]. Proofs for instantiations used in the
+ * steps of SHA-1 [FIPS-PUB-180-4 Section 6.1.2].
+ * ```
+ * :prove ROTLIsLeftCircularShift`{ 1, 32}
+ * :prove ROTLIsLeftCircularShift`{ 5, 32}
+ * :prove ROTLIsLeftCircularShift`{30, 32}
+ * ```
+ */
+ROTLIsLeftCircularShift : {n, w} (fin w, n < w) => Word w -> Bool
+property ROTLIsLeftCircularShift x =
+   ROTL`{n} x == (x << `n) || (x >> `(w - n))
+
+/**
+ * This property demonstrates that `ROTL` can be written in terms of
+ * `ROTR`. The approximate equivalence detailed in the specification
+ * is made precise by assuming `n > 0` [FIPS-PUB-180-4 Section 3.2].
+ */
+ROTLAsROTR : {n, w} (fin w, n > 0, n < w) => Word w -> Bool
+property ROTLAsROTR x = ROTL`{n} x == ROTR`{w-n} x
+
+/**
+ * This property demonstrates that `ROTR` can be written in terms of
+ * `ROTL`. The approximate equivalence detailed in the specification
+ * is made precise by assuming `n > 0` [FIPS-PUB-180-4 Section 3.2].
+ */
+ROTRAsROTL : {n, w} (fin w, n > 0, n < w) => Word w -> Bool
+property ROTRAsROTL x = ROTR`{n} x == ROTL`{w-n} x

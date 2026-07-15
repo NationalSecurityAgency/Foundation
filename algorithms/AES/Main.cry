@@ -1,0 +1,48 @@
+/*
+ * Description: This is a Cryptol specification for the Advanced
+ * Encryption Standard (AES), also called Rijndael
+ * [FIPS-PUB-197]. This specification is specialized to Nb = 4 and
+ * supports the standard key sizes of 128, 192, and 256-bits.
+ */
+
+module algorithms::AES::Main where
+
+import algorithms::AES::Types
+import algorithms::AES::Cipher (Cipher, InvCipher)
+import algorithms::AES::KeyExpansion (KeyExpansion)
+
+/**
+ * This record holds the main AES block cipher functions [FIPS-PUB-197
+ * Section 5], namely, `Encrypt` and `Decrypt`.
+ */
+AES : {k} (Key k)
+ => { Encrypt : ([k] -> [128] -> [128])
+    , Decrypt : ([k] -> [128] -> [128])
+    }
+AES = {
+    Encrypt key in = join (Cipher`{k}    (KeyExpansion`{k} (split (split key))) (split in))
+  , Decrypt key in = join (InvCipher`{k} (KeyExpansion`{k} (split (split key))) (split in))
+}
+
+/**
+ * This property demonstrates that `Encrypt` and `Decrypt` are
+ * inverses.
+ */
+EncryptInverts : {k} (Key k) => [k] -> [128] -> Bit
+property EncryptInverts key in =
+    AES`{k}.Decrypt key (AES`{k}.Encrypt key in) == in
+
+/**
+ * This is the AES-128 block cipher [FIPS-PUB-197 Section 5].
+ */
+AES128 = AES`{128}
+
+/**
+ * This is the AES-192 block cipher [FIPS-PUB-197 Section 5].
+ */
+AES192 = AES`{192}
+
+/**
+ * This is the AES-256 block cipher [FIPS-PUB-197 Section 5].
+ */
+AES256 = AES`{256}

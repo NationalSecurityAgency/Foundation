@@ -1,0 +1,62 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `shared/CRC`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+include "CRC8_H2F.saw";
+let CRC8_H2F_main = main;
+
+include "CRC8_SAE_J1850.saw";
+let CRC8_SAE_J1850_main = main;
+
+include "CRC16_CCITT_FALSE.saw";
+let CRC16_CCITT_FALSE_main = main;
+
+include "CRC16_ARC.saw";
+let CRC16_ARC_main = main;
+
+include "CRC32_IEEE_802_3_Ethernet.saw";
+let CRC32_IEEE_802_3_Ethernet_main = main;
+
+include "CRC32_P4.saw";
+let CRC32_P4_main = main;
+
+include "CRC64_ECMA.saw";
+let CRC64_ECMA_main = main;
+
+include "Tests.saw";
+let Tests_main = main;
+
+/*
+ * Script to run on command line:
+ *   `saw all.saw`
+ * Return:
+ *   `TopLevel [Theorem]` verifying all lemmas used throughout `shared/CRC`.
+ */
+let main : TopLevel [Theorem] = do {
+  CRC8_H2F_lemmas                  <- CRC8_H2F_main;
+  CRC8_SAE_J1850_lemmas            <- CRC8_SAE_J1850_main;
+  CRC16_CCITT_FALSE_lemmas         <- CRC16_CCITT_FALSE_main;
+  CRC16_ARC_lemmas                 <- CRC16_ARC_main;
+  CRC32_IEEE_802_3_Ethernet_lemmas <- CRC32_IEEE_802_3_Ethernet_main;
+  CRC32_P4_lemmas                  <- CRC32_P4_main;
+  CRC64_ECMA_lemmas                <- CRC64_ECMA_main;
+  Tests_lemmas                     <- Tests_main;
+
+  summarize_verification;
+
+  return
+    (foldl concat []
+      [ CRC8_H2F_lemmas
+      , CRC8_SAE_J1850_lemmas
+      , CRC16_CCITT_FALSE_lemmas
+      , CRC16_ARC_lemmas
+      , CRC32_IEEE_802_3_Ethernet_lemmas
+      , CRC32_P4_lemmas
+      , CRC64_ECMA_lemmas
+      , Tests_lemmas
+      ]);
+};

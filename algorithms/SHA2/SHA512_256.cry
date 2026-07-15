@@ -1,0 +1,33 @@
+/*
+ * Description: This module specifies the Secure Hash Algorithm with a
+ * variant of SHA-512 with a digest size of 256 bits (SHA-512/256)
+ * [FIPS-PUB-180-4 Section 6.7].
+ */
+module algorithms::SHA2::SHA512_256 = packaging::Hash where
+
+type _BlockSize  = 1024
+type _DigestSize = 256
+type _UpperLimit = 128
+
+_hash = SHA512_256::hash
+
+import algorithms::SHA2::Notation (ROTR, SHR)
+import algorithms::SHA2::Preprocessing (H0_512_256)
+import algorithms::SHA2::Functions ( SIGMA_512_0
+                                  , SIGMA_512_1
+                                  , sigma_512_0
+                                  , sigma_512_1
+                                  , K_512)
+
+import algorithms::SHA2::Main as SHA512_256 where
+  type d = 256
+  type w = 64
+  type Klen = 80
+
+  H0 = H0_512_256
+  K = K_512
+
+  SIGMA_0 = SIGMA_512_0
+  SIGMA_1 = SIGMA_512_1
+  sigma_0 = sigma_512_0
+  sigma_1 = sigma_512_1

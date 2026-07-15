@@ -1,0 +1,46 @@
+/*
+ * Description: This file provides commonly used helper functions for
+ * building properties.
+ */
+
+module shared::common::properties where
+
+/**
+ * This function can be used to determine if two functions are
+ * equivalent.
+ */
+equivalent : {a, b} (Eq b) => (a -> b) -> (a -> b) -> a -> Bool
+equivalent = (===)
+
+/**
+ * Given two functions `f'` and `f`, this function can be used to
+ * determine if `f'` inverts `f`.
+ */
+inverts : {a, b} (Eq a) => (b -> a) -> (a -> b) -> a -> Bool
+inverts f' f x = f' (f x) == x
+
+/**
+ * This function can be used to determine if two functions are
+ * inverses.
+ */
+inverses : {a} (Eq a) => (a -> a) -> (a -> a) -> a -> Bool
+inverses f' f x = f' (f x) == x
+
+/**
+ * This function can be used to determine if a function is an
+ * involution.
+ */
+involutes : {a} (Eq a) => (a -> a) -> a -> Bool
+involutes f = inverses f f
+
+/**
+ * This function can be used to determine if a function is injective.
+ */
+injective : {a, b} (Eq a, Eq b) => (a -> b) -> a -> a -> Bool
+injective f a b = a != b ==> f a != f b
+
+/**
+ * This function can be used to determine if a function is bijective.
+ */
+bijective : {a} (Eq a) => (a -> a) -> a -> a -> Bool
+bijective = injective

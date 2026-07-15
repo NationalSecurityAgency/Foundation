@@ -1,0 +1,50 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties about
+ * CRC32 P4.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+// Import Cryptol specification for CRC32 P4.
+import "../CRC32_P4.cry" as CRC32_P4;
+
+let verify_magicCheckCorrect : TopLevel Theorem =
+    proveit {{ CRC32_P4::magicCheckCorrect`{8} }} rme;
+
+let verify_checkCorrect : TopLevel Theorem =
+    proveit {{ CRC32_P4::checkCorrect }} rme;
+
+let verify_reflectionReverse : TopLevel Theorem =
+    proveit {{ CRC32_P4::reflectionReverse }} rme;
+
+let verify_reflectionTests : TopLevel Theorem =
+    proveit {{ CRC32_P4::reflectionTests }} rme;
+
+let verify_CRCUpdateCorrect : TopLevel Theorem =
+    proveit {{ CRC32_P4::CRCUpdateCorrect`{8, 8} }} rme;
+
+let verify_CRCUpdateTest : TopLevel Theorem =
+    proveit {{ CRC32_P4::CRCUpdateTest }} rme;
+
+/*
+ * Verify public properties of `shared::CRC::CRC32_P4`.
+ */
+let main : TopLevel [Theorem] = do {
+  magicCheckCorrect_lemma <- verify_magicCheckCorrect;
+  checkCorrect_lemma <- verify_checkCorrect;
+  reflectionReverse_lemma <- verify_reflectionReverse;
+  reflectionTests_lemma <- verify_reflectionTests;
+  CRCUpdateCorrect_lemma <- verify_CRCUpdateCorrect;
+  CRCUpdateTest_lemma <- verify_CRCUpdateTest;
+
+  summarize_verification;
+
+  return [ magicCheckCorrect_lemma
+         , checkCorrect_lemma
+         , reflectionReverse_lemma
+         , reflectionTests_lemma
+         , CRCUpdateCorrect_lemma
+         , CRCUpdateTest_lemma
+         ];
+};

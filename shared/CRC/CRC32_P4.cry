@@ -1,0 +1,15 @@
+/*
+ * Description: This module implements the CRC32P4 Cyclic Redundancy
+ * Check (CRC) [AUTOSAR Section 7.2.3.2].
+ */
+
+module shared::CRC::CRC32_P4 = shared::CRC::Main where
+
+type CRCResultWidth = 32
+polynomial          = [True] # 0xF4ACFB13
+initialValue        = 0xFFFFFFFF
+inputDataReflected  = True
+resultDataReflected = True
+XORValue            = 0xFFFFFFFF
+check               = 0x1697D06A
+magicCheck          = 0x904CDDBF

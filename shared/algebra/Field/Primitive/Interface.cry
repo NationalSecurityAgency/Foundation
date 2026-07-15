@@ -1,0 +1,11 @@
+/* 
+ * Description: This module provides an interface for primitive Field
+ * elements that all make use of the same set of primitive operators
+ * defined in `shared::algebra::Field::Primitive::Functor`.
+ */
+
+interface module shared::algebra::Field::Primitive::Interface where
+
+/** arbitrary primitive field type */
+type FieldElement : *
+type constraint Field FieldElement

@@ -1,0 +1,383 @@
+/*
+ * Description: This module provides some functions that give the
+ * feel of operating with arbitrary sized lists. This module
+ * redefines many functions included in Cryptol's prelude. As such
+ * this module should be imported qualified, like so:
+ * ```
+ * import shared::common::utils::List as List
+ * ```
+ */
+
+module shared::common::utils::List where
+
+import shared::common::utils::Imperative (while)
+import shared::common::utils::Sort as Sort (insertBy)
+import shared::common::utils::Enum (unwrap)
+
+import Cryptol as Cryptol (zero, take, drop, length, update, updates, head, tail, map, foldl, foldr)
+import Cryptol hiding     (zero, take, drop, length, update, updates, head, tail, map, foldl, foldr)
+
+/**
+ * This is the type of a list.
+ */
+type List a = ([inf]a, Integer)
+
+/**
+ * Enumeration of different types of errors that may occur in this
+ * module.
+ */
+enum ListError
+  = EmptySequenceHasNoHead
+  | EmptySequenceHasNoTail
+  | IndexIsOutsideOfList
+  | SizeParameterOutOfBounds
+
+/**
+ * This value represents an empty list.
+ */
+empty : {a} List a
+empty = (undefined, 0)
+
+/**
+ * This operator pushes a new element onto the front of a list.
+ */
+push : {a} a -> List a -> List a
+push x (y, len) = ([x] # y, len + 1)
+
+/**
+ * This operator determines whether a list is `empty`.
+ */
+isEmpty : {a} List a -> Bit
+isEmpty (_, len) = len == 0
+
+/**
+ * This operator returns the head of a list.
+ */
+head : {a} List a -> Result a ListError
+head list =
+    if isEmpty list then Err EmptySequenceHasNoHead
+    else                 Ok x
+  where
+    ([x] # _, _) = list
+
+/**
+ * This property demonstrates that Cryptol's built-in `head` function
+ * is congruent to this module's `List`-based implementation.
+ * ```
+ * :prove headIsCongruent`{10, Bit}
+ * ```
+ */
+headIsCongruent : {n, a} (fin n, Eq a) => [1 + n]a -> Bool
+property headIsCongruent seq =
+  unwrap (head (toList seq)) == Cryptol::head seq
+
+/**
+ * This operator returns the tail of a list.
+ */
+tail : {a} List a -> Result (List a) ListError
+tail list =
+    if isEmpty list then Err EmptySequenceHasNoTail
+    else                 Ok (xs, len - 1)
+  where
+    ([_] # xs, len) = list
+
+/**
+ * This property demonstrates that Cryptol's built-in `tail` function
+ * is congruent to this module's `List`-based implementation.
+ * ```
+ * :prove tailIsCongruent`{10, Bit}
+ * ```
+ */
+tailIsCongruent : {n, a} (fin n, Eq a) => [1 + n]a -> Bool
+property tailIsCongruent seq =
+  unwrap (fromList (unwrap (tail (toList seq)))) == Cryptol::tail seq
+
+/**
+ * This operator returns the nth element of a list (xs@i for Cryptol
+ * sequences).
+ */
+nth : {a, ix} (Integral ix) => List a -> ix -> Result a ListError
+nth (xs, len) i =
+    if toInteger i >= 0 /\ toInteger i < len then Ok (xs@i)
+    else Err IndexIsOutsideOfList
+
+/**
+ * This property demonstrates that Cryptol's built-in `@` function is
+ * congruent to this module's `List`-based implementation (called
+ * `nth`).
+ * ```
+ * :prove nthIsCongruent`{16, Bit, [4]}
+ * ```
+ */
+nthIsCongruent :
+    {n, a, ix}
+    (fin n, Eq a, Cmp ix, Integral ix)
+ => [n]a -> ix -> Bool
+property nthIsCongruent seq i =
+    toInteger i >= 0 /\ toInteger i < `n ==>
+    unwrap (nth (toList seq) i) == seq @ i
+
+/**
+ * This operator returns the length of a list.
+ */
+length : {a} List a -> Integer
+length (_, len) = len
+
+/**
+ * This property demonstrates that this module's `List`-based
+ * `length` returns the correct size of the list.
+ * ```
+ * :prove lengthIsCongruent`{100, Bit}
+ * ```
+ */
+lengthIsCongruent : {n, a} (fin n) => [n]a -> Bool
+property lengthIsCongruent seq = `n == length (toList seq)
+
+/**
+ * This operator is equivalent to take for lists.
+ */
+take :
+    {a, ix}
+    (Integral ix)
+ => List a -> ix -> Result (List a) ListError
+take (x, len) n =
+    if toInteger n >= 0 /\ toInteger n <= len
+    then Ok (x, toInteger n)
+    else Err SizeParameterOutOfBounds  // n must be >= 0 and <= len
+
+/**
+ * This property demonstrates that Cryptol's built-in `take` function
+ * is congruent to this module's `List`-based implementation.
+ * ```
+ * :prove takeIsCongruent`{10, Bit, 0}
+ * :prove takeIsCongruent`{10, Bit, 5}
+ * :prove takeIsCongruent`{10, Bit, 10}
+ * ```
+ */
+takeIsCongruent : {n, a, k} (fin n, Eq a, k <= n) => [n]a -> Bool
+property takeIsCongruent seq =
+    unwrap (fromList (unwrap (take (toList seq) `k))) == Cryptol::take`{k} seq
+
+/**
+ * This operator is equivalent to drop for lists.
+ */
+drop :
+    {a, ix}
+    (Integral ix)
+ => List a -> ix -> Result (List a) ListError
+drop (x, len) n =
+    if toInteger n >= 0 /\ len >= toInteger n
+    then Ok (x @@ [n ...], len - toInteger n)
+    else Err SizeParameterOutOfBounds  // n must be >= 0 and <= len
+
+/**
+ * This property demonstrates that Cryptol's built-in `drop` function
+ * is congruent to this module's `List`-based implementation.
+ * ```
+ * :prove dropIsCongruent`{10, Bit, 0}
+ * :prove dropIsCongruent`{10, Bit, 5}
+ * :prove dropIsCongruent`{10, Bit, 10}
+ * ```
+ */
+dropIsCongruent : {n, a, k} (fin n, Eq a, k <= n) => [n]a -> Bool
+property dropIsCongruent seq =
+    unwrap (fromList (unwrap (drop (toList seq) `k))) == Cryptol::drop`{k} seq
+
+/**
+ * This creates a list filled with zeros of length `len`.
+ */
+zero : {a} (Zero a) => Integer -> List a
+zero len = (Cryptol::zero, len)
+
+/**
+ * This operator concatenates two lists.
+ */
+concat : {a} List a -> List a -> List a
+concat (x, lenx) (y, leny) = (z, lenx + leny)
+    where z@i = if i < lenx then x @ i else y @ (i - lenx)
+
+/**
+ * This property demonstrates that Cryptol's built-in `#` function
+ * is congruent to this module's `List`-based `concat` implementation.
+ * ```
+ * :prove concatIsCongruent`{10, 11, Bit}
+ * ```
+ */
+concatIsCongruent : {n, m, a} (fin n, fin m, Eq a) => [n]a -> [m]a -> Bool
+property concatIsCongruent seq1 seq2 =
+    unwrap (fromList (concat (toList seq1) (toList seq2))) == seq1 # seq2
+
+/**
+ * Finds the index of an element using binary search. The input list
+ * is assumed to be sorted according to the given operator. In case of
+ * duplicates, this will find the leftmost element. If the element
+ * does not exist, this will return the index where the element could
+ * be inserted and maintain a sorted list.
+ */
+binarySearchBy :
+    {a}
+    (Eq a)
+ => (a -> a -> Bit) -> List a -> a -> (Bit, Integer)
+binarySearchBy le (xs, n) e =
+    if n == 0 then (False, 0)
+    else (if i == n then False else xs@i == e, i)
+  where
+    (i, _, _) = while (\(l, r, m) -> l < r)
+                      (\(l, r, m) -> if le (xs@m) e then (m+1, r, (l + r) / 2)
+                                                    else (l  , m, (l + r) / 2))
+                      (0, n, (n - 1) / 2)
+
+/**
+ * Insert an element into a sorted list.
+ */
+insertBy : {a} (a -> a -> Bit) -> List a -> a -> List a
+insertBy le (xs, n) e = findSubList`{0, 2}
+  where
+    findSubList : {l, r} (fin l, fin r) => List a
+    findSubList =
+        if n > `r then findSubList`{r+1, r * 2       }
+         | n > `m then findSubList`{m+1, r           }
+         | n < `m then findSubList`{l  , max 1 m - 1 }
+        else (Sort::insertBy le (Cryptol::take`{m} xs) e # (Cryptol::drop`{m} xs), n+1)
+      where
+        type m = (l + r) / 2
+
+/**
+ * This property demonstrates that `Sort::insertBy` is congruent to this
+ * module's `List`-based implementation.
+ * ```
+ * :prove insertByIsCongruent`{10, Bit} (\x y -> x <= y)
+ * ```
+ */
+insertByIsCongruent : {n, a} (fin n, Eq a) => (a -> a -> Bit) -> [n]a -> a -> Bool
+property insertByIsCongruent le seq e =
+    unwrap (fromList (insertBy le (toList seq) e)) == Sort::insertBy le seq e
+
+/**
+ * Update a value in a list.
+ */
+update : {ix, a} (Integral ix) => List a -> ix -> a -> Result (List a) ListError
+update (x, len) index value =
+    if toInteger index >= 0 /\ len > toInteger index
+    then Ok (Cryptol::update x index value, len)
+    else Err SizeParameterOutOfBounds  // Cannot update a value at an index that is
+                                       // greater than the length of the given list
+
+/**
+ * This property demonstrates that Cryptol's built-in `update` function is
+ * congruent to this module's `List`-based implementation.
+ * ```
+ * :prove updateIsCongruent`{16, [4], Bit}
+ * ```
+ */
+updateIsCongruent : {n, ix, a} (fin n, Eq a, Integral ix) => [n]a -> ix -> a -> Bool
+property updateIsCongruent seq index value =
+    toInteger index >= 0 /\ toInteger index < `n ==>
+    unwrap (fromList (unwrap (update (toList seq) index value))) == Cryptol::update seq index value
+
+/**
+ * Performs a series of updates to in a list.
+ */
+updates : {k, ix, a} (fin k, Integral ix) => List a -> [k]ix -> [k]a -> Result (List a) ListError
+updates (x, len) indices values =
+    if [ len > toInteger index | index <- indices ] != Cryptol::zero
+    then Ok (Cryptol::updates x indices values, len)
+    else Err SizeParameterOutOfBounds  // Cannot update a value at an index that is
+                                       // greater than the length of the given list
+
+/**
+ * This property demonstrates that Cryptol's built-in `updates` function is
+ * congruent to this module's `List`-based implementation.
+ * ```
+ * :prove updatesIsCongruent`{16, 5, [4], Bit}
+ * ```
+ */
+updatesIsCongruent : {n, k, ix, a} (fin n, fin k, Eq a, Integral ix) => [n]a -> [k]ix -> [k]a -> Bool
+property updatesIsCongruent seq indices values =
+    [ toInteger index < 0 \/ toInteger index >= `n | index <- indices ] == Cryptol::zero ==>
+    unwrap (fromList (unwrap (updates (toList seq) indices values))) == Cryptol::updates seq indices values
+
+/**
+ * This operator returns a list filtered by the given predicate.
+ */
+filter : {a} (a -> Bit) -> List a -> List a
+filter p list =
+    if isEmpty list then empty
+     | p h          then push h (filter p t)
+    else                 filter p t
+  where
+    h = unwrap (head list)
+    t = unwrap (tail list)
+
+/**
+ * This operator is semantically equivalent to `map`, but on lists.
+ */
+map : {a, b} (a -> b) -> List a -> List b
+map f (xs, len) = (Cryptol::map f xs, len)
+
+/**
+ * This property demonstrates that Cryptol's built-in `map` function is
+ * congruent to this module's `List`-based implementation.
+ */
+mapIsCongruent : {n, a, b} (fin n, Eq b) => (a -> b) -> [n]a -> Bool
+property mapIsCongruent f seq =
+  unwrap (fromList (map f (toList seq))) == Cryptol::map f seq
+
+/**
+ * This operator is semantically equivalent to `foldr`, but on lists.
+ *  - foldr f b empty = b
+ *  - foldr f b (push x xs) = f x (foldr f b xs)
+ */
+foldr : {a, b} (a -> b -> b) -> b -> List a -> b
+foldr f b (xs, len) = ys @ len
+  where
+    ys = [b] # [ f (xs @ (len - i)) yi | i <- [1...] | yi <- ys ]
+
+/**
+ * This property demonstrates that Cryptol's built-in `foldr` function is
+ * congruent to this module's `List`-based implementation.
+ */
+foldrIsCongruent : {n, a, b} (fin n, Eq b) => (a -> b -> b) -> b -> [n]a -> Bool
+property foldrIsCongruent f b seq =
+  foldr f b (toList seq) == Cryptol::foldr f b seq
+
+/**
+ * This operator is semantically equivalent to `foldl`, but on lists.
+ *  - foldl f b empty = b
+ *  - foldl f b (push x xs) = foldl f (f b x) xs
+ */
+foldl : {a, b} (a -> b -> a) -> a -> List b -> a
+foldl f b (xs, len) = ys @ len
+  where
+    ys = scanl f b xs
+
+/**
+ * This property demonstrates that Cryptol's built-in `foldl` function is
+ * congruent to this module's `List`-based implementation.
+ */
+foldlIsCongruent : {n, a, b} (fin n, Eq a) => (a -> b -> a) -> a -> [n]b -> Bool
+property foldlIsCongruent f b seq =
+  foldl f b (toList seq) == Cryptol::foldl f b seq
+
+/**
+ * Transforms a sequence into a list.
+ */
+toList : {n, a} (fin n) => [n]a -> List a
+toList xs = (xs # undefined, `n)
+
+/**
+ * Transforms a list into a sequence.
+ */
+fromList : {n, a} (fin n) => List a -> Result ([n]a) ListError
+fromList (xs, len) =
+    if len == `n
+    then Ok (Cryptol::take xs)
+    else Err SizeParameterOutOfBounds
+
+/**
+ * This property demonstrates that transforming a sequence into a
+ * `List` by using `toList` is invertible by using `fromList.
+ */
+fromListInvertstoList : {n, a} (fin n, Eq a) => [n]a -> Bool
+property fromListInvertstoList xs =
+    unwrap (fromList (toList xs)) == xs

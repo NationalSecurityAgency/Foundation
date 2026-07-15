@@ -1,0 +1,7 @@
+/*
+ * Description: This is an instantiation of the 64-bit W and W'
+ * functions [NIST-800-38F].
+ */
+module algorithms::KeyWrapping::W64 = algorithms::KeyWrapping::W where
+
+type semiblock = 64

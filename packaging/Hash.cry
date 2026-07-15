@@ -1,0 +1,132 @@
+/*
+ * Description: This is a parameterized module that provides a common
+ * interface for hash functions, as well as some common uses such as
+ * HMAC and PBKDF.
+ */
+
+module packaging::Hash where
+
+import algorithms::HMAC::Main as _HMAC
+import algorithms::PBKDF::Main as _PBKDF
+
+parameter
+
+  type _BlockSize  : #
+  type constraint ( fin _BlockSize
+                  , _BlockSize % 8 == 0
+                  , _BlockSize > 0
+                  )
+
+  type _DigestSize : #
+  type constraint ( fin _DigestSize
+                  , _DigestSize % 8 == 0
+                  , 2^^(_BlockSize/8) >= _BlockSize
+                  , _DigestSize <= _BlockSize
+                  , _DigestSize < 2^^(_BlockSize/8) - _BlockSize
+                  )
+
+  type _UpperLimit : #
+
+  _hash : {a} (fin a, _UpperLimit >= width a) => [a] -> [_DigestSize]
+
+// Here the parameters are made public.
+
+/**
+ * Number of bits used by the internal block of the hash function
+ * (used to compute HMAC). Must be a multiple of 8.
+ */
+type BlockSize = _BlockSize
+
+/**
+ * Number of bits produced by the hash function. Must be a
+ * multiple of 8.
+ */
+type DigestSize = _DigestSize
+
+/**
+ * Upper limit on the number of bits that can be hashed, specifically,
+ * `UpperLimit >= width a`, or equivalently, `2^^UpperLimit > a`.
+ * `type UpperLimit = inf` should be used if no limit exists.
+ */
+type UpperLimit = _UpperLimit
+
+// Main Functions
+
+/**
+ * Run the hash function on an input to produce a digest.
+ */
+hash : {a} (fin a, UpperLimit >= width a) => [a] -> [DigestSize]
+hash M = _hash M
+
+/**
+ * HMAC message authentication function.
+ *
+ * Inputs
+ *   `K`: a k-byte key.
+ *   `text`: an n-bit message.
+ *
+ * Output:
+ *   a `DigestSize`-bit message.
+ */
+HMAC :
+    { k, n }
+    ( fin k, fin n, n < 2^^(BlockSize/8) - BlockSize
+    , UpperLimit >= width (8 * k)
+    , UpperLimit >= width (BlockSize - BlockSize % 8 + n)
+    , UpperLimit >= width (BlockSize + DigestSize)
+    )
+ => [k][8]
+ -> [n]
+ -> [DigestSize]
+HMAC = _HMAC::HMAC`{ B = BlockSize/8, L = DigestSize/8 } Hk Hn HL
+  where
+    Hk = hash
+    Hn = hash
+    HL = hash
+
+/**
+ * The PBKDF2 function is used to derive cryptographic keying material
+ * from a password or passphrase.
+ *
+ * Inputs:
+ *   `HMAC0, HMACj`: The same HMAC using different length text 
+ *       inputs. Each has block size `hLen`-bits.
+ *   `P`: A `k`-byte passphrase.
+ *   `S`: The salt, represented as a binary string. `S` should be
+ *       generated using an approved Random Bit Generator and should
+ *       be at least 128-bits.
+ *   `C`: A fixed value that determines how many times the PRF/HMAC
+ *       iterates to generate one block of the Master Key.
+ *
+ * Outputs:
+ *   `mk`: A `kLen`-bit Master Key.
+ * 
+ * Types:
+ *   `hLen`: Length of the output PRF/HMAC in bits.
+ *   `kLen`: Length of the output of PBKDF in bits.
+ *   `k`   : Length of the password `P` in bytes.
+ *   `sLen`: Length of the salt `S` in bits.
+ */
+PBKDF2 :
+    { kLen, k, sLen }
+    ( kLen >= 112, kLen <= (2^^32 - 1) * DigestSize
+    , fin k
+    , fin sLen, sLen >= 128, 32 + sLen < 2^^(BlockSize/8) - BlockSize
+    , UpperLimit >= width (8 * k)
+    , UpperLimit >= width (BlockSize - BlockSize % 8 + DigestSize)
+    , UpperLimit >= width (BlockSize - BlockSize % 8 + sLen + 32)
+    , UpperLimit >= width (BlockSize + DigestSize)
+    )
+ => [k][8]   // `P`
+ -> [sLen]   // `S`
+ -> Integer  // `C`
+ -> [kLen]   // `mk`
+PBKDF2 P S C =
+    _PBKDF::PBKDF2`{ hLen=DigestSize
+                   , kLen=kLen
+                   , k=k
+                   , sLen=sLen
+                   }
+                   HMAC`{ k = k, n = sLen + 32 }
+                   HMAC`{ k = k, n = DigestSize }
+                   P S C

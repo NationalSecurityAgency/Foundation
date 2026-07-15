@@ -1,0 +1,37 @@
+/* 
+ * Description: This module contains a single test from:
+ *  `https://csrc.nist.gov/Projects/cryptographic-algorithm-validation-program/digital-signatures`
+ */
+
+module algorithms::ECDSA::tests::p256 where
+
+import shared::common::utils::TypeCoercion (BVtoZ)
+import shared::common::utils::Enum (unwrap)
+import algorithms::ECDSA::p256
+import algorithms::SHA2::SHA384 as SHA384
+
+/** Message to sign */
+M = 0xe0b8596b375f3306bbc6e77a0b42f7469d7e83635990e74aa6d713594a3a24498feff5006790742d9c2e9b47d714bee932435db747c6e733e3d8de41f2f91311f2e9fd8e025651631ffd84f66732d3473fbd1627e63dc7194048ebec93c95c159b5039ab5e79e42c80b484a943f125de3da1e04e5bf9c16671ad55a1117d3306
+
+/** Private key */
+d = BVtoZ 0xb6faf2c8922235c589c27368a3b3e6e2f42eb6073bf9507f19eed0746c79dced
+
+/** Random value */
+k = BVtoZ 0x9980b9cdfcef3ab8e219b9827ed6afdd4dbf20bd927e9cd01f15762703487007
+
+/** `r` component of the signature */
+r = BVtoZ 0xf5087878e212b703578f5c66f434883f3ef414dc23e2e8d8ab6a8d159ed5ad83
+
+/** `s` component of the signature */
+s = BVtoZ 0x306b4c6c20213707982dffbb30fba99b96e792163dd59dbe606e734328dd7c8a
+
+/** Public key */
+Q = { x = BVtoZ 0xe0e7b99bc62d8dd67883e39ed9fa0657789c5ff556cc1fd8dd1e2a55e9e3f243
+    , y = BVtoZ 0x63fbfd0232b95578075c903a4dbf85ad58f8350516e1ec89b0ee1f5e1362da69
+    }
+
+/** A test of p256 */
+property p256Test =
+    unwrap(sign M d SHA384::hash k) == (r, s)
+ /\ verify M (r, s) (private_to_public d) SHA384::hash
+ /\ Q == unwrap (ec_affinify (private_to_public d))

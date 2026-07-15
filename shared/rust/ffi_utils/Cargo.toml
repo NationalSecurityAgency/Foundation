@@ -1,0 +1,9 @@
+[package]
+name = "ffi_utils"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[lints.rust]
+unexpected_cfgs = { level = "allow", check-cfg = ['cfg(kani)'] }

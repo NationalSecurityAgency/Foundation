@@ -1,0 +1,271 @@
+/*
+ * Description: This module provides some tests for
+ * `shared::algebra::Polynomial::GF2`.
+ */
+
+module shared::algebra::Polynomial::GF2::Test where
+
+import shared::algebra::Polynomial::GF2 ((^+), (^*), (^%), (^^^), is_irreducible, is_primitive, pdeg, pgcd)
+
+/**
+ * `pdeg` returns the degree of its leading coefficient.
+ *
+ * This property can be proven for small degrees, e.g. up to 8:
+ *
+ * ```
+ * :prove pdeg_leading`{0}
+ * :prove pdeg_leading`{1}
+ * :prove pdeg_leading`{2}
+ * :prove pdeg_leading`{3}
+ * :prove pdeg_leading`{4}
+ * :prove pdeg_leading`{5}
+ * :prove pdeg_leading`{6}
+ * :prove pdeg_leading`{7}
+ * :prove pdeg_leading`{8}
+ * ```
+ */
+pdeg_leading : {w} (fin w) => [w] -> Bool
+property pdeg_leading x = pdeg (0b1 # x) == `w
+
+/**
+ * `pdeg` disregards leading zeros.
+ *
+ * This property can be proven for small degrees, e.g. up to 8:
+ *
+ * ```
+ * :prove pdeg_ignores_leading_zeros`{0}
+ * :prove pdeg_ignores_leading_zeros`{1}
+ * :prove pdeg_ignores_leading_zeros`{2}
+ * :prove pdeg_ignores_leading_zeros`{3}
+ * :prove pdeg_ignores_leading_zeros`{4}
+ * :prove pdeg_ignores_leading_zeros`{5}
+ * :prove pdeg_ignores_leading_zeros`{6}
+ * :prove pdeg_ignores_leading_zeros`{7}
+ * :prove pdeg_ignores_leading_zeros`{8}
+ * ```
+ */
+pdeg_ignores_leading_zeros : {w} (fin w) => [w] -> Bool
+property pdeg_ignores_leading_zeros x = pdeg (0b0 # x) == pdeg x
+
+/**
+ * This property specifies correctness conditions for `pgcd`.
+ *
+ * It can be checked for correctness, but is challenging to prove:
+ *
+ * ```
+ * :exhaust pgcd_constraints`{7, 7}
+ * ```
+ */
+pgcd_constraints :
+    {wa, wb}
+    (fin wa, fin wb)
+ => [1 + wa] -> [1 + wb] -> Bool
+property pgcd_constraints a b =
+    zext g == a ^* u ^+ b ^* v
+ /\ zext a == g ^* a'
+ /\ zext b == g ^* b'
+ /\ ((~ elem [<| 0 |>, <| 1 |>] [[u, v], [v, u]]) ==>
+     (pdeg u < pdeg b - pdeg g /\ pdeg v < pdeg a - pdeg g))
+  where
+    [g, u, v, a', b'] = pgcd a b
+
+/**
+ * This property states that no polynomial of higher degree than `g`
+ * evenly divides both `a` and `b`, where `g = pgcd a b @ 0`.
+ * `pgcd_constraints` establishes that `g` divides both `a` and `b`,
+ * so these properties collectively specify that `g` is the *greatest
+ * common divisor* of `a` and `b`.
+ *
+ * This can be checked for correctness, but is challenging to prove:
+ *
+ * ```
+ * :check pgcd_no_greater`{7, 7}
+ * ```
+ */
+pgcd_no_greater :
+    {wa, wb}
+    (fin wa, fin wb)
+ => [1 + max wa wb] -> [1 + wa] -> [1 + wb] -> Bool
+property pgcd_no_greater a b p =
+    (a, b) != (0, 0) /\ pdeg p > pdeg g ==>
+    a ^% p != <| 0 |> \/ b ^% p != <| 0 |>
+  where
+    g = pgcd a b @ 0
+
+/**
+ * `is_irreducible` agrees with known irreducible polynomials of degree
+ * up to 8 with coefficients in GF(2).
+ *
+ * This property can be verified exhaustively for each degree:
+ *
+ * ```
+ * :exhaust is_irreducible_agrees_gf2`{1}
+ * :exhaust is_irreducible_agrees_gf2`{2}
+ * :exhaust is_irreducible_agrees_gf2`{3}
+ * :exhaust is_irreducible_agrees_gf2`{4}
+ * :exhaust is_irreducible_agrees_gf2`{5}
+ * :exhaust is_irreducible_agrees_gf2`{6}
+ * :exhaust is_irreducible_agrees_gf2`{7}
+ * :exhaust is_irreducible_agrees_gf2`{8}
+ * ```
+ */
+is_irreducible_agrees_gf2 : {w} (8 >= w, w >= 1) => [w] -> Bool
+property is_irreducible_agrees_gf2 = is_irreducible_agrees_gf2'
+
+/**
+ * auxiliary declaration for `property is_irreducible_agrees_gf2`
+ * because Cryptol syntax does not currently allow properties to be
+ * defined with numeric constraint guards
+ */
+is_irreducible_agrees_gf2' : {w} (8 >= w, w >= 1) => [w] -> Bool
+is_irreducible_agrees_gf2' x
+  | w == 1 => is_irreducible (0b1 # x)
+           == elem (0b1 # x) (primitives_gf2_1 # nonprimitive_irreducibles_gf2_1)
+  | w == 2 => is_irreducible (0b1 # x)
+           == elem (0b1 # x) (primitives_gf2_2 # nonprimitive_irreducibles_gf2_2) 
+  | w == 3 => is_irreducible (0b1 # x)
+           == elem (0b1 # x) (primitives_gf2_3 # nonprimitive_irreducibles_gf2_3)
+  | w == 4 => is_irreducible (0b1 # x)
+           == elem (0b1 # x) (primitives_gf2_4 # nonprimitive_irreducibles_gf2_4)
+  | w == 5 => is_irreducible (0b1 # x)
+           == elem (0b1 # x) (primitives_gf2_5 # nonprimitive_irreducibles_gf2_5)
+  | w == 6 => is_irreducible (0b1 # x)
+           == elem (0b1 # x) (primitives_gf2_6 # nonprimitive_irreducibles_gf2_6)
+  | w == 7 => is_irreducible (0b1 # x)
+           == elem (0b1 # x) (primitives_gf2_7 # nonprimitive_irreducibles_gf2_7)
+  | w == 8 => is_irreducible (0b1 # x)
+           == elem (0b1 # x) (primitives_gf2_8 # nonprimitive_irreducibles_gf2_8)
+
+/**
+ * `is_primitive` agrees with known primitive polynomials of degree
+ * up to 8 with coefficients in GF(2).
+ *
+ * This property can be verified exhaustively for each degree:
+ *
+ * ```
+ * :exhaust is_primitive_agrees_gf2`{1}
+ * :exhaust is_primitive_agrees_gf2`{2}
+ * :exhaust is_primitive_agrees_gf2`{3}
+ * :exhaust is_primitive_agrees_gf2`{4}
+ * :exhaust is_primitive_agrees_gf2`{5}
+ * :exhaust is_primitive_agrees_gf2`{6}
+ * :exhaust is_primitive_agrees_gf2`{7}
+ * :exhaust is_primitive_agrees_gf2`{8}
+ * ```
+ */
+is_primitive_agrees_gf2 : {w} (8 >= w, w >= 1) => [w] -> Bool
+property is_primitive_agrees_gf2 = is_primitive_agrees_gf2'
+
+/**
+ * auxiliary declaration for `property is_primitive_agrees_gf2`
+ * because Cryptol syntax does not currently allow properties to be
+ * defined with numeric constraint guards
+ */
+is_primitive_agrees_gf2' : {w} (8 >= w, w >= 1) => [w] -> Bool
+is_primitive_agrees_gf2' x
+  | w == 1 => is_primitive (0b1 # x) == elem (0b1 # x) primitives_gf2_1
+  | w == 2 => is_primitive (0b1 # x) == elem (0b1 # x) primitives_gf2_2
+  | w == 3 => is_primitive (0b1 # x) == elem (0b1 # x) primitives_gf2_3
+  | w == 4 => is_primitive (0b1 # x) == elem (0b1 # x) primitives_gf2_4
+  | w == 5 => is_primitive (0b1 # x) == elem (0b1 # x) primitives_gf2_5
+  | w == 6 => is_primitive (0b1 # x) == elem (0b1 # x) primitives_gf2_6
+  | w == 7 => is_primitive (0b1 # x) == elem (0b1 # x) primitives_gf2_7
+  | w == 8 => is_primitive (0b1 # x) == elem (0b1 # x) primitives_gf2_8
+
+/*
+ * Below are sequences of known *primitive* and *irreducible but not
+ * primitive* polynomials of degree from 1 to 8 with coefficients in
+ * GF(2), according to:
+ *   https://www.ece.unb.ca/tervo/ece4253/polyprime.shtml
+ *
+ * Primitive polynomials are also irreducible, and any polynomials
+ * (of degree 1 to 8) not listed are *not irreducible* (*reducible*).
+ */
+
+/** known primitive polynomials of degree 1 with coefficients in GF(2) */
+primitives_gf2_1 = [0b11]
+
+/**
+ * known irreducible but non-primitive polynomials of degree 1 with
+ * coefficients in GF(2)
+ */
+nonprimitive_irreducibles_gf2_1 = [0b10]
+
+/** known primitive polynomials of degree 2 with coefficients in GF(2) */
+primitives_gf2_2 = [0b111]
+
+/**
+ * known irreducible but non-primitive polynomials of degree 2 with
+ * coefficients in GF(2)
+ */
+nonprimitive_irreducibles_gf2_2 = []
+
+/** known primitive polynomials of degree 3 with coefficients in GF(2) */
+primitives_gf2_3 = [0b1011, 0b1101]
+
+/**
+ * known irreducible but non-primitive polynomials of degree 3 with
+ * coefficients in GF(2)
+ */
+nonprimitive_irreducibles_gf2_3 = []
+
+/** known primitive polynomials of degree 4 with coefficients in GF(2) */
+primitives_gf2_4 = [0b10011, 0b11001]
+
+/**
+ * known irreducible but non-primitive polynomials of degree 4 with
+ * coefficients in GF(2)
+ */
+nonprimitive_irreducibles_gf2_4 = [0b11111]
+
+/** known primitive polynomials of degree 5 with coefficients in GF(2) */
+primitives_gf2_5 =
+    [0b100101, 0b101001, 0b101111, 0b110111, 0b111011, 0b111101]
+
+/**
+ * known irreducible but non-primitive polynomials of degree 5 with
+ * coefficients in GF(2)
+ */
+nonprimitive_irreducibles_gf2_5 = []
+
+/** known primitive polynomials of degree 6 with coefficients in GF(2) */
+primitives_gf2_6 =
+    [0b1000011, 0b1011011, 0b1100001, 0b1100111, 0b1101101, 0b1110011]
+
+/**
+ * known irreducible but non-primitive polynomials of degree 6 with
+ * coefficients in GF(2)
+ */
+nonprimitive_irreducibles_gf2_6 = [0b1001001, 0b1010111, 0b1110101]
+
+/** known primitive polynomials of degree 7 with coefficients in GF(2) */
+primitives_gf2_7 =
+    [ 0b10000011, 0b10001001, 0b10001111, 0b10010001, 0b10011101
+    , 0b10100111, 0b10101011, 0b10111001, 0b10111111, 0b11000001
+    , 0b11001011, 0b11010011, 0b11010101, 0b11100101, 0b11101111
+    , 0b11110001, 0b11110111, 0b11111101
+    ]
+
+/**
+ * known irreducible but non-primitive polynomials of degree 7 with
+ * coefficients in GF(2)
+ */
+nonprimitive_irreducibles_gf2_7 = []
+
+/** known primitive polynomials of degree 8 with coefficients in GF(2) */
+primitives_gf2_8 =
+    [ 0b100011101, 0b100101011, 0b100101101, 0b101001101, 0b101011111
+    , 0b101100011, 0b101100101, 0b101101001, 0b101110001, 0b110000111
+    , 0b110001101, 0b110101001, 0b111000011, 0b111001111, 0b111100111
+    , 0b111110101
+    ]
+
+/**
+ * known irreducible but non-primitive polynomials of degree 8 with
+ * coefficients in GF(2)
+ */
+nonprimitive_irreducibles_gf2_8 =
+    [ 0b100011011, 0b100111001, 0b100111111, 0b101110111, 0b101111011
+    , 0b110001011, 0b110011111, 0b110100011, 0b110110001, 0b110111101
+    , 0b111010111, 0b111011101, 0b111110011, 0b111111001
+    ]

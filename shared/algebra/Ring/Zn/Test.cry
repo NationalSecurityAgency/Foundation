@@ -1,0 +1,15 @@
+/*
+ * Description: This module demonstrates how to use the `Ring::Zn`
+ * module.
+ */
+
+module shared::algebra::Ring::Zn::Test where
+
+import shared::algebra::Ring::Zn where
+  type n = 6
+
+import submodule Arithmetic
+import submodule Scalar
+
+property sum_check = 5 .+ 4 == 3
+property exp_check = exp 4 2 == 4

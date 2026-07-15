@@ -1,0 +1,86 @@
+name: Create assurance artifacts
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'main'
+  schedule:
+    - cron: '0 22 * * *'
+
+env:
+  CRYPTOL_SERVER_URL: 'http://foundation:8080'
+  SAW_SERVER_URL: 'http://localhost:8080'
+  SAW_SOLVER_CACHE_PATH: 'saw-cache'
+  VENV_CRYPTOL: '/opt/venv/cryptol-remote-api'
+  VENV_SAW: '/opt/venv/saw-remote-api'
+
+jobs:
+
+  # This job builds the foundation image for this pipeline.
+  build-foundation-image:
+    uses: ./.github/workflows/release-build-foundation-image.yml
+    with:
+      sha: ${{ github.sha }}
+
+  # This job attempts to load all Cryptol files in foundation.
+  load-all-cry-files:
+    needs: build-foundation-image
+    runs-on: ubuntu-latest
+    container: ghcr.io/nationalsecurityagency/foundation/cryptol-remote-api-client:latest
+    services:
+      foundation:
+        image: ghcr.io/nationalsecurityagency/foundation/foundation:${{ github.sha }}
+        ports:
+          - 8080:8080
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+      - name: Run python script to load all Cryptol files in virtual environment for Cryptol Remote API
+        run: $VENV_CRYPTOL/bin/python3 .ci/load-all-cry-files.py
+
+  # This job attempts to run top-level SAW files in foundation.
+  load-top-level-SAW-files:
+    needs: build-foundation-image
+    runs-on: ubuntu-latest
+    container: ghcr.io/nationalsecurityagency/foundation/foundation-saw:${{ github.sha }}
+    steps:
+     - name: Prefix 'pwd' onto SAW_SOLVER_CACHE_PATH
+       run: echo "SAW_SOLVER_CACHE_PATH=/home/saw/$SAW_SOLVER_CACHE_PATH" >> $GITHUB_ENV
+     - name: Restore SAW proof cache
+       uses: actions/cache/restore@v6
+       with:
+         path: ${{ env.SAW_SOLVER_CACHE_PATH }}
+         key: ${{ github.ref_name }}-saw-cache-${{ github.sha }}
+         restore-keys: |
+           ${{ github.ref_name }}-saw-cache-
+           main-saw-cache-
+     - name: Clean SAW proof cache
+       run: saw --clean-mismatched-versions-solver-cache
+     - name: Run top-level SAW files.
+       working-directory: /home/saw
+       run: .ci/run-top-level-saw-files.sh
+
+  # This job attempts to run top-level SAW python files in foundation.
+  load-top-level-SAW-python-files:
+    needs: build-foundation-image
+    runs-on: ubuntu-latest
+    container: ghcr.io/nationalsecurityagency/foundation/foundation-saw:${{ github.sha }}
+    steps:
+     - name: Prefix 'pwd' onto SAW_SOLVER_CACHE_PATH
+       run: echo "SAW_SOLVER_CACHE_PATH=/home/saw/$SAW_SOLVER_CACHE_PATH" >> $GITHUB_ENV
+     - name: Restore SAW proof cache
+       uses: actions/cache/restore@v6
+       with:
+         path: ${{ env.SAW_SOLVER_CACHE_PATH }}
+         key: ${{ github.ref_name }}-saw-rust-cache-${{ github.sha }}
+         restore-keys: |
+           ${{ github.ref_name }}-saw-rust-cache-
+           main-saw-rust-cache-
+     - name: Clean SAW proof cache
+       run: saw --clean-mismatched-versions-solver-cache
+     - name: Run top-level SAW python files.
+       working-directory: /home/saw
+       run: |
+         saw-remote-api http --host 0.0.0.0 --port 8080 / &
+         .ci/run-saw-python-files.sh

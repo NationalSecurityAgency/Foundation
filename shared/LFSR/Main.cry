@@ -1,0 +1,211 @@
+/*
+ * Description: This is a Cryptol specification of linear feedback
+ * shift registers (LFSRs). 
+ *
+ * The n stages of a shift register are denoted by 1, x, x^^2, x^^3,
+ * ..., x^^(n-1). The bit represented by x^n is the sum of a subset of
+ * these terms. The sum is calculated two different ways, one called
+ * Fibonacci motion and the other called Galois motion.
+ *
+ * Example (Fibonacci motion):
+ *
+ * +------------------------+
+ * |                       / \
+ * |                      /   \
+ * |    +------+------+-----+-----+
+ * +--> | x^^3 | x^^2 |  x  |  1  |
+ *      +------+------+-----+-----+
+ *
+ * In polynomial form, this rule of Fibonacci motion is equivalent to
+ * x^^4 + x + 1.
+ *
+ * The polynomial itself is used to express the rule of motion. The
+ * notiation used here follows that of linear recurrence relations,
+ * specifically as it relates to shift registers [Golomb17 Section 2].
+ * As such, the polynomial and picture above correspond to the
+ * linear recurrence: x^^4 = 1 + x.
+ *
+ * The degree of a polynomial is the same as the register size. In the
+ * above example the degree and register size are 4.
+ *
+ * Galois motion shift registers are also specified below.
+ */
+
+module shared::LFSR::Main where
+
+import `shared::CRC::Main as CRC
+
+/*
+ * The following functions provide a very general form of Fibonacci
+ * motion LFSR that accepts a key stream that is added into the
+ * register, a mechanism that supports irregular stepping, and
+ * arbitrarily-typed elements.
+ */
+
+/**
+ * Compute one step of a keyed irregular stepping Fibonacci motion
+ * shift register.
+ */
+fmsrkiStep :
+    { a, degree }
+    ( Zero a, fin degree, degree > 0 )
+ => (a -> a -> a) -> [degree+1] -> a -> Bit -> [degree]a -> [degree]a
+fmsrkiStep add poly key cond fill = fill'
+  where
+    feedback = if head poly
+               then foldl add zero (select (reverse poly) (fill # [key]))
+               else zero
+    fill'    = if cond then tail fill # [feedback] else fill
+
+/**
+ * Compute the stream and fills of a keyed irregular stepping
+ * Fibonacci motion shift register.
+ */
+fmsrkiRun :
+    { a, degree }
+    ( Zero a, fin degree, degree > 0 )
+ => (a -> a -> a) -> [degree+1] -> [inf]a -> [inf] -> [degree]a -> {stream : [inf]a, fills : [inf][degree]a}
+fmsrkiRun add poly keys conds init = {stream=stream, fills=fills}
+  where
+    fills = [init] # [ fmsrkiStep add poly k c s | k <- keys | c <- conds | s <- fills ]
+    stream = map head fills
+
+/*
+ * The following functions elide the keystream and irregular stepping
+ * of the `fmsrki` functions above to form regularly stepped Fibonacci
+ * motion LFSRs.
+ */
+
+/**
+ * This computes one step of a regular stepping Fibonacci motion shift
+ * register.
+ */
+fmsrStep :
+    { degree, a }
+    ( Zero a, fin degree, degree > 0 )
+ => (a -> a -> a) -> [degree+1] -> [degree]a -> [degree]a
+fmsrStep add poly fill = fmsrkiStep add poly zero True fill
+
+/**
+ * This computes the stream and fills of a regular stepping Fibonacci
+ * motion shift register.
+ */
+fmsrRun :
+    { degree, a }
+    ( Zero a, fin degree, degree > 0 )
+ => (a -> a -> a)  -> [degree+1] -> [degree]a -> {stream : [inf]a, fills : [inf][degree]a}
+fmsrRun add poly init = fmsrkiRun add poly zero (~zero) init
+
+/*
+ * The following functions provide a general form of `Bit`-level
+ * Galois motion LFSR that accepts a key stream that is XORd into the
+ * register and a mechanism that supports irregular stepping.
+ */
+
+/**
+ * This computes one step of a keyed irregular stepping Galois
+ * motion shift register.
+ */
+gmsrkiStep :
+    { degree }
+    ( fin degree, degree > 0 )
+ => [degree+1] -> Bit -> Bit -> [degree] -> [degree]
+gmsrkiStep poly key cond fill = fill''
+  where
+    poly' = (reverse (~1 && poly))>>>1 //rejigger
+    feedbackBit = if(poly'@0) then (key ^ fill@0) else False
+    fill'  = if cond then (tail fill) # [feedbackBit] else fill
+    fill'' = if feedbackBit then fill' ^ (reverse (tail poly')) else fill'
+
+/**
+ * This computes the stream and fills of a keyed irregular stepping
+ * Galois motion shift register.
+ */
+gmsrkiRun :
+    { degree }
+    ( fin degree, degree > 0 )
+ => [degree+1] -> [inf] -> [inf] -> [degree] -> {stream : [inf], fills : [inf][degree]}
+gmsrkiRun poly keys conds init = {stream=stream, fills=fills}
+  where
+    fills = [init] # [ gmsrkiStep poly k c s | k <- keys | c <- conds | s <- fills ]
+    stream = map head fills
+
+/*
+ * The following functions elide the keystream and irregular stepping
+ * of `gmsrki` functions above to form regularly stepped Galois motion
+ * LFSRs.
+ */
+
+/**
+ * This computes one step of a regular stepping Galois motion shift
+ * register.
+ */
+gmsrStep :
+    { degree }
+    ( fin degree, degree > 0 )
+ => [degree+1] -> [degree] -> [degree]
+gmsrStep poly fill = gmsrkiStep poly False True fill
+
+/**
+ * This computes the stream and fills of a regular stepping Galois
+ * motion shift register.
+ */
+gmsrRun :
+    { degree }
+    ( fin degree, degree > 0 )
+ => [degree+1] -> [degree] -> {stream : [inf], fills : [inf][degree]}
+gmsrRun poly init = gmsrkiRun poly zero (~zero) init
+
+private
+
+/**
+ * Demonstration of the Fibonacci sequence namesake [Golomb17 Section 2.6].
+ */
+property FibonacciSequenceTest = take`{1000} fib == take`{1000} fmsrStream
+  where
+    fib = [0, 1] # [ f0 + f1 | f0 <- fib | f1 <- tail fib ] : [inf]Integer
+    fmsrStream = (fmsrRun (+) <| x^^2 + x^^1 + 1 |> [0, 1]).stream
+
+/*
+ * This property demonstrates that parities can be defined via LFSRs
+ * and CRCs.
+ * ```
+ * :prove parityEquivalence`{4, 10}
+ * ```
+ */
+parityEquivalence :
+    { a, degree }
+    ( fin a, fin degree, degree > 0 )
+ => [degree+1] -> [a] -> Bit
+property parityEquivalence polynomial xs =
+    (head polynomial) /\ (last polynomial) ==> parity1 == parity2
+  where
+    parity1 = (gmsrkiRun polynomial (xs#zero) (~zero) 0).fills@`a
+    parity2 = CRC::CRC`{degree}
+                  { polynomial = polynomial
+                  , initialValue = zero
+                  , inputDataReflected = False
+                  , resultDataReflected = False
+                  , XORValue = zero
+                  , check = undefined
+                  , magicCheck = undefined
+                  } xs
+
+/**
+ * This function returns a sequence that is `xs` where `cs` is `True`
+ * and `zero` otherwise. At the `Bit` level, this is identical to
+ * ANDing two sequences. For example,
+ *
+ * ```
+ * :check select 0b1001 [1, 2, 3, 4] == [1, 0, 0, 4]
+ * ```
+ */
+select : {a, n} (Zero a) => [n] -> [n]a -> [n]a
+select cs xs = [ if ci then xi else zero | ci <- cs | xi <- xs ]
+
+/**
+ * This property demonstrates that `select` on sequences of type `Bit`
+ * is the same as `&&`.
+ */
+selectOnBitIsAND : {n} (fin n) => [n] -> [n] -> Bool
+property selectOnBitIsAND cs xs = select cs xs == cs && xs

@@ -1,0 +1,15 @@
+/*
+ * Description: This module implements the CRC64 ECMA Cyclic
+ * Redundancy Check (CRC) [AUTOSAR Section 7.2.4.1].
+ */
+
+module shared::CRC::CRC64_ECMA = shared::CRC::Main where
+
+type CRCResultWidth = 64
+polynomial          = [True] # 0x42F0E1EBA9EA3693
+initialValue        = 0xFFFFFFFFFFFFFFFF
+inputDataReflected  = True
+resultDataReflected = True
+XORValue            = 0xFFFFFFFFFFFFFFFF
+check               = 0x995DC9BBDF1939FA
+magicCheck          = 0x49958C9ABD7D353F

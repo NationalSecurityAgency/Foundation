@@ -1,0 +1,54 @@
+name: Light-weight Rust checking
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+
+  # This job runs `cargo fmt` on included Rust.
+  cargo-fmt:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/nationalsecurityagency/foundation/cargo:latest
+    steps:
+     - name: Check out code
+       uses: actions/checkout@v7
+     - name: cargo fmt
+       run: |
+         set -e
+         CARGO_TOML_FILES=`find . -name "Cargo.toml"`
+         for f in $CARGO_TOML_FILES; do cargo fmt --manifest-path $f --all -- --check; done;
+
+  # This job runs `cargo clippy` on included Rust.
+  cargo-clippy:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/nationalsecurityagency/foundation/cargo:latest
+    steps:
+     - name: Check out code
+       uses: actions/checkout@v7
+     - name: cargo clippy
+       run: |
+         set -e
+         CARGO_TOML_FILES=`find . -name "Cargo.toml"`
+         for f in $CARGO_TOML_FILES; do cargo clippy --manifest-path $f --all-targets --all-features -- -Dclippy::all -Dclippy::pedantic; done;
+
+  # This job runs `cargo test` and `cargo kani` on included Rust.
+  cargo-test:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/nationalsecurityagency/foundation/cargo:latest
+    steps:
+     - name: Check out code
+       uses: actions/checkout@v7
+     - name: cargo test
+       run: |
+         set -e
+         CARGO_TOML_FILES=`find . -name "Cargo.toml"`
+         for f in $CARGO_TOML_FILES; do cargo test --manifest-path $f --all-targets; \
+                                        cargo test --manifest-path $f --doc; \
+                                        # cargo kani --manifest-path $f --output-format=terse; \
+                                     done;

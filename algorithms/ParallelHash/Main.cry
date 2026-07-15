@@ -1,0 +1,148 @@
+/*
+ * Description: This module provides ParallelHash functions
+ * [NIST-SP-800-185 Section 6].
+ */
+
+module algorithms::TupleHash::Main where
+
+import algorithms::Keccak::derived (left_encode, right_encode)
+import algorithms::Keccak::Main (bitReordering)
+import algorithms::cSHAKE::Main (cSHAKE128, cSHAKE256)
+
+/**
+ * ParallelHash supports the efficient hashing of very long strings,
+ * by taking advantage of the parallelism available in modern
+ * processors. ParallelHash supports the 128- and 256-bit security
+ * strengths, and also provides variable-length output. Changing any
+ * input parameter to ParallelHash, even the requested output length,
+ * will result in unrelated output [NIST-SP-800-185 Section 6.1].
+ *
+ * Inputs:
+ *   `X`: The main input bit string. It may be of any length,
+ *        including zero, so long as the length is divisible by `B`
+ *        and 8.
+ *   `S`: A customization bit string of any length, including zero. If
+ *        no customization is desired, set `S` to the empty string.
+ *
+ * Notable types:
+ *   `L`: An integer representing the requested output length in
+ *        bits.
+ *   `B`: The block size in bytes for parallel hashing. It may be any
+ *        integer such that `0 < B < 2 ^^ 2040`.
+ */
+ParallelHash128 :
+    { L, B, n, s }
+    ( L < 2 ^^ 2040
+    , 0 < B, B < 2 ^^ 2040
+    , n < 2 ^^ 2040
+    , s < 2 ^^ 2040 )
+ => [n * B * 8] -> [s] -> [L]
+ParallelHash128 X S =
+    cSHAKE128`{L} newX (join "ParallelHash") S
+  where
+    newX = (bitReordering left_encode`{B})
+         # join (parmap (\Xi -> cSHAKE128`{256} Xi [] [])
+                        (split`{n, B * 8} X))
+         # (bitReordering right_encode`{n})
+         # (bitReordering right_encode`{L})
+
+/**
+ * ParallelHash supports the efficient hashing of very long strings,
+ * by taking advantage of the parallelism available in modern
+ * processors. ParallelHash supports the 128- and 256-bit security
+ * strengths, and also provides variable-length output. Changing any
+ * input parameter to ParallelHash, even the requested output length,
+ * will result in unrelated output [NIST-SP-800-185 Section 6.1].
+ *
+ * Inputs:
+ *   `X`: The main input bit string. It may be of any length,
+ *        including zero, so long as the length is divisible by `B`
+ *        and 8.
+ *   `S`: A customization bit string of any length, including zero. If
+ *        no customization is desired, set `S` to the empty string.
+ *
+ * Notable types:
+ *   `L`: An integer representing the requested output length in
+ *        bits.
+ *   `B`: The block size in bytes for parallel hashing. It may be any
+ *        integer such that `0 < B < 2 ^^ 2040`.
+ */
+ParallelHash256 :
+    { L, B, n, s }
+    ( L < 2 ^^ 2040
+    , 0 < B, B < 2 ^^ 2040
+    , n < 2 ^^ 2040
+    , s < 2 ^^ 2040 )
+ => [n * B * 8] -> [s] -> [L]
+ParallelHash256 X S =
+    cSHAKE256`{L} newX (join "ParallelHash") S
+  where
+    newX = (bitReordering left_encode`{B})
+         # join (parmap (\Xi -> cSHAKE256`{512} Xi [] [])
+                        (split`{n, B * 8} X))
+         # (bitReordering right_encode`{n})
+         # (bitReordering right_encode`{L})
+
+/**
+ * This is a variant of `ParallelHash128` as an XOF [NIST-SP-800-185
+ * Section 6.3.1].
+ *
+ * Inputs:
+ *   `X`: The main input bit string. It may be of any length,
+ *        including zero, so long as the length is divisible by `B`
+ *        and 8.
+ *   `S`: A customization bit string of any length, including zero. If
+ *        no customization is desired, set `S` to the empty string.
+ *
+ * Notable types:
+ *   `L`: An integer representing the requested output length in
+ *        bits.
+ *   `B`: The block size in bytes for parallel hashing. It may be any
+ *        integer such that `0 < B < 2 ^^ 2040`.
+ */
+ParallelHashXOF128 :
+    { L, B, n, s }
+    ( 0 < B, B < 2 ^^ 2040
+    , n < 2 ^^ 2040
+    , s < 2 ^^ 2040 )
+ => [n * B * 8] -> [s] -> [L]
+ParallelHashXOF128 X S =
+    cSHAKE128`{L} newX (join "ParallelHash") S
+  where
+    newX = (bitReordering left_encode`{B})
+         # join (parmap (\Xi -> cSHAKE128`{256} Xi [] [])
+                        (split`{n, B * 8} X))
+         # (bitReordering right_encode`{n})
+         # (bitReordering right_encode`{0})
+
+/**
+ * This is a variant of `ParallelHash256` as an XOF [NIST-SP-800-185
+ * Section 6.3.1].
+ *
+ * Inputs:
+ *   `X`: The main input bit string. It may be of any length,
+ *        including zero, so long as the length is divisible by `B`
+ *        and 8.
+ *   `S`: A customization bit string of any length, including zero. If
+ *        no customization is desired, set `S` to the empty string.
+ *
+ * Notable types:
+ *   `L`: An integer representing the requested output length in
+ *        bits.
+ *   `B`: The block size in bytes for parallel hashing. It may be any
+ *        integer such that `0 < B < 2 ^^ 2040`.
+ */
+ParallelHashXOF256 :
+    { L, B, n, s }
+    ( 0 < B, B < 2 ^^ 2040
+    , n < 2 ^^ 2040
+    , s < 2 ^^ 2040 )
+ => [n * B * 8] -> [s] -> [L]
+ParallelHashXOF256 X S =
+    cSHAKE256`{L} newX (join "ParallelHash") S
+  where
+    newX = (bitReordering left_encode`{B})
+         # join (parmap (\Xi -> cSHAKE256`{512} Xi [] [])
+                        (split`{n, B * 8} X))
+         # (bitReordering right_encode`{n})
+         # (bitReordering right_encode`{0})

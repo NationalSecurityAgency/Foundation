@@ -1,0 +1,222 @@
+/*
+ * Description: This module provides infix operators for common matrix
+ * operations.
+ */
+
+module shared::algebra::Field::Operators::Matrix where
+
+import interface shared::algebra::Field::Interface
+interface constraint Eq FieldElement
+
+import shared::algebra::Field::Operators::Scalar { interface Interface }
+import shared::algebra::Field::Operators::Vector { interface Interface }
+
+/** Matrix type of `rows` by `cols` */
+type Matrix rows columns = [rows](Vector columns)
+
+/** Matrix addition */
+infixl 80 #+
+(#+) : {rows, cols} Matrix rows cols -> Matrix rows cols -> Matrix rows cols
+(#+) = zipWith (|+)
+
+/** Matrix subtraction */
+infixl 80 #-
+(#-) : {rows, cols} Matrix rows cols -> Matrix rows cols -> Matrix rows cols
+(#-) = zipWith (|-)
+
+/** Matrix multiplication */
+infixl 90 #*
+(#*) : 
+    {rows, mids, cols}
+    (fin mids)
+ => Matrix rows mids -> Matrix mids cols -> Matrix rows cols
+A #* B = C 
+  where  
+    C @ i @ j = (A @ i) |* (transpose B @ j)
+
+/** Identity matrix */
+I : {n} Matrix n n 
+I @ i @ j = if i == j then one else zro
+
+/**
+ * Compute the inverse of a square matrix.
+ */
+inverse : {n} (fin n, n > 0) => Matrix n n -> Result (Matrix n n) (String 18)
+inverse M =
+  if ns then Ok (transpose [ lupSolve lu p (unitVector i) | i <- [0 ..< n] ])
+  else Err "Matrix is singular"
+    where
+      (ns, lu, p, _) = lupDecompose M    
+
+/**
+ * This property can be used to demonstrate `inverse` is correct.
+ *
+ * ```x-repl
+ * :m shared::algebra::Field::Zp::Test
+ * :exhaust inverseIsCorrect`{2, 1}
+ * :exhaust inverseIsCorrect`{3, 1}
+ * :exhaust inverseIsCorrect`{2, 2}
+ * :exhaust inverseIsCorrect`{3, 2}
+ * :exhaust inverseIsCorrect`{2, 3}
+ * :exhaust inverseIsCorrect`{3, 3}
+ * ```
+ */
+inverseIsCorrect :
+    {n}
+    (fin n, n > 0)
+ => Matrix n n -> Bool
+property inverseIsCorrect M = x
+  where
+    x = case inverse M of
+      Err e   -> True
+      Ok invM -> M #* invM == I
+
+/** Determinant */
+det : {n} (fin n) => Matrix n n -> FieldElement
+det M 
+   | n == 0 => one
+   | n == 1 => M@0@0
+   | n == 2 => M@0@0 .* M@1@1 .- M@0@1 .* M@1@0
+   | n >  2 => if ns then (neg one) .^^ swaps .* m 
+               else zro
+                 where
+                   (ns, lu, p, swaps) = lupDecompose M
+                   q                  = [0 ..< n]
+                   m                  = foldl mul one [ lu @ i @ i | i <- q] 
+
+/**
+ * A predicate for the nonsingularity/invertibility of a matrix.
+ */
+nonsingular : {n} (fin n) => Matrix n n -> Bool
+nonsingular M 
+  | n == 0 => True
+  | n >= 1 => ns where (ns, _, _, _) = lupDecompose M
+
+private
+
+/**
+ * Map a function over a finite sequence and provide the function with
+ * the position at which each element occurs.
+ */
+mapAt : {n, b} (fin n) => ([width n] -> b -> b) -> [n]b -> [n]b
+mapAt f m = [ f i (m @ i ) | i <- [0 ..< n ] ]
+
+/** Eliminate row `i`. */
+elim : {n} (fin n) => [width n] -> Matrix n n -> Matrix n n
+elim i M = mapAt f M
+  where
+    invA_i_i = rec (M @ i @ i)
+    f j v    = if i < j then mapAt g v else v
+      where
+        a_j_i = (v @ i) .* invA_i_i
+        g k x = if k < i  then x 
+                 | k == i then a_j_i
+                else           x .- a_j_i .* (M @ i @ k)
+
+/** Swap two rows. */
+swap : {n, b} (fin n) => [width n] -> [width n] -> [n]b -> [n]b 
+swap i j x = updates x [i, j] (x @@ [j, i])
+
+/**
+ * Pivot rows when `M[i][i] == 0`. The first element of the output is
+ * True when the matrix is non-singular.
+ */
+pivot :
+    {n}
+    (fin n, n >= 1)
+ => [width n]
+ -> Matrix n n 
+ -> [n][width n]
+ -> [width n]
+ -> (Bit, Matrix n n, [n][width n], [width n])
+pivot i M perm s = last str 
+  where
+    str = [ (False, M, perm, s) ]
+        # [ f done lu p j swaps | (done, lu, p, swaps) <- str | j <- [0 ..< n] ]
+    f done lu p j swaps =
+      if j < i             then (done, lu, p, swaps)
+       | j == i            then (lu @ i @i != zro, lu, p, swaps)
+       | done              then (done, lu, p, swaps)
+       | lu @ j @ i == zro then (done, lu, p, swaps)
+      else                      (True, swap i j lu, swap i j p, swaps + 1) //Pivot
+
+/**
+ * Perform partial pivoting and then elimination of matrix `M` and
+ * pivot `p` at `i`. When `ns == False`, matrix `M` is known to be
+ * singular.
+ */
+reduceRow:
+    {n}
+    (fin n, n >= 1)
+ => [width n]
+ -> Bit
+ -> Matrix n n 
+ -> [n][width n]
+ -> [width n]
+ -> (Bit, Matrix n n, [n][width n], [width n])
+reduceRow i ns M p swaps =
+    if ~ns then (ns  , M         , p  , swaps)    // M is known to be singular.
+     | ns' then (ns' , elim i M' , p' , swaps')   // Perform elimination at row i.
+    else        (ns' , M         , p' , swaps')   // M is singular; pivoting failed.
+  where
+    (ns' , M' , p', swaps') = pivot i M p swaps
+
+/** Unit vector */
+unitVector : {n} (fin n) => [width n] -> [n]FieldElement
+unitVector i = [ if i == j then one else zro | j <- [0 ..< n] ]
+
+/**
+ * LU Decomposition with Partial pivoting.
+ *
+ * Decompose square matrix `A` as `P*A` = `L*U` where
+ * `P` is a permuation matrix,
+ * `L` is unit lower triangular, and
+ * `U` is upper triangular.
+ * This is a Doolittle decomposition. `L` and `U` are stored in one
+ * matrix.
+ */
+lupDecompose : 
+    {n} 
+    (fin n, n >=1)
+ => Matrix n n 
+ -> (Bit, Matrix n n, [n][width n], [width n])
+lupDecompose M = last str
+  where
+    str = [ (True, M, [0 ..< n], 0) ]
+        # [ reduceRow i non_singular lu p swaps
+          | (non_singular, lu, p, swaps) <- str
+          | i <- [0 ..< n]
+          ]
+
+/**
+ * Solve a set of linear equations given an LUP decomposition of a
+ * matrix. That is, find `x` such that `a * x == b`, where `lu` and
+ * `p` are the decomposition of matrix `M`. This functions assumes `M`
+ * is non-singular.
+ */
+lupSolve :
+     {n}
+     (fin n)
+  => Matrix n n 
+  -> [n][width n]
+  -> Vector n 
+  -> Vector n 
+lupSolve lu p b = backward_solution
+  where
+    // Permute b according to p.
+    pb = mapAt pf b 
+    pf i x = b @ (p @ i)
+    // Perform a forward substitution on pb.
+    forward_solution = [ ff i x | x <- pb | i <- [0 ..< n] ]
+    ff i x = last str
+      where
+        str = [x ] # [ h j y | y <- str | j <- [0 ..< n] ]
+        h j y = if j < i then y .- (lu @ i @ j) .* (forward_solution @ j)
+                else          y
+    // Perform a backward substitution of fb.
+    backward_solution = [bf i x | x <- forward_solution | i <- [0 ..< n] ]
+    bf i x = (last str) ./ (lu @ i @ i)
+      where
+        str = [ x ] # [ h j y | y <- str | j <- [0 ..< n] ]
+        h j y = if i < j then y .- (lu @ i @ j) .* (backward_solution @ j)
+                else          y

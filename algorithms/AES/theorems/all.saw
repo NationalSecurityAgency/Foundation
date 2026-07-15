@@ -1,0 +1,42 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `algorithms/AES`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+include "Main.saw";
+let Main_main = main;
+
+include "GF28.saw";
+let GF28_main = main;
+
+include "SBox.saw";
+let SBox_main = main;
+
+include "Cipher.saw";
+let Cipher_main = main;
+
+/*
+ * Script to run on command line:
+ *   `saw all.saw`
+ * Return:
+ *   `TopLevel [Theorem]` verifying all lemmas used throughout `algorithms/AES`.
+ */
+let main : TopLevel [Theorem] = do {
+  Main_lemmas   <- Main_main;
+  GF28_lemmas   <- GF28_main;
+  SBox_lemmas   <- SBox_main;
+  Cipher_lemmas <- Cipher_main;
+
+  summarize_verification;
+
+  return
+    (foldl concat []
+      [ Main_lemmas
+      , GF28_lemmas
+      , SBox_lemmas
+      , Cipher_lemmas
+      ]);
+};

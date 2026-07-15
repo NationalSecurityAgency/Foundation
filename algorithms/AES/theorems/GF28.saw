@@ -1,0 +1,24 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `algorithms/AES/GF28.cry`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+// Import the AES Cryptol GF(2^^8) functions.
+import "../GF28.cry";
+
+let verify_GF28MultiplicationCorrect : TopLevel Theorem =
+    proveit {{ GF28MultiplicationCorrect }} rme;
+
+/*
+ * Verify public properties of `algorithms::AES::GF28`.
+ */
+let main : TopLevel [Theorem] = do {
+  GF28MultiplicationCorrect_lemma <- verify_GF28MultiplicationCorrect;
+
+  summarize_verification;
+
+  return [GF28MultiplicationCorrect_lemma];
+};

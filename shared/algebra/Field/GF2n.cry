@@ -1,0 +1,33 @@
+/*
+ * Description: This module provides a Field for elements in GF(2^n).
+ */
+
+module shared::algebra::Field::GF2n where
+
+parameter
+  /** power of 2 for GF(2^n) */
+  type n : #
+  type constraint (fin n, n >= 2)
+
+  /** irreducible polynomial in GF(2)[X] */
+  p : [n+1]
+
+private
+
+  // These line remove circular dependency error.
+  type _n = n 
+  _p = p 
+
+/** `Arithmetic` instance for `GF2n` */
+submodule Arithmetic = shared::algebra::Field::GF2n::Functor where 
+  type n = _n
+  p = _p
+
+/** Scalar operators for `GF2n` */
+submodule Scalar = shared::algebra::Field::Operators::Scalar { submodule Arithmetic }
+
+/** Vector operators for `GF2n` */
+submodule Vector = shared::algebra::Field::Operators::Vector { submodule Arithmetic }
+
+/** Matrix operators for `GF2n` */
+submodule Matrix = shared::algebra::Field::Operators::Matrix { submodule Arithmetic }

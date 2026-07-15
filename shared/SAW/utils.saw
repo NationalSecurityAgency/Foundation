@@ -1,0 +1,71 @@
+/*
+ * This file provides utilities to remove repetition and support
+ * elegance in SAW proofs.
+ */
+
+/*
+ * Many SAW scripts rely on 'experimental' commands such as
+ * `goal_normalize`. So, we enable access to them here.
+ */
+enable_experimental;
+
+/*
+ * This command rewrites the current goal using a given set of
+ * lemmas. A simplification set of Cryptol-specific lemmas is also
+ * added via `cryptol_ss`. Note that `cryptol_ss` is often not
+ * necessary and marginally slows down simplification. `empty_ss`
+ * usually suffices, but, we use `cryptol_ss` here in favor of
+ * convenience at the potential expense of extra runtime.
+ */ 
+let use_lemmas lemmas =
+    simplify (addsimps lemmas empty_ss);
+
+/*
+ * If set to true, timing information will display between each call
+ * to the `proveit` command below.
+ */
+let display_proof_progress = {{ False }};
+
+/*
+ * This command provides a slightly nicer interface to the built-in
+ * `prove_print` command.
+ */ 
+let proveit property script =
+  do {
+    let property_rw = rewrite (cryptol_ss()) property;
+    if eval_bool display_proof_progress
+    then do {
+      print (str_concat "Proving " (show_term property_rw));
+      time (prove_print script property_rw);
+    }
+    else prove_print script property_rw;
+  };
+
+/*
+ * This command supports `:check`ing properties that are of type
+ * `Bit`.
+ */
+let checkit property =
+  do {
+    let property_rw = rewrite (cryptol_ss()) property;
+    let script = do { rme; };
+    if eval_bool display_proof_progress
+    then do {
+      print (str_concat "Checking " (show_term property));
+      time (prove_print script property);
+    }
+    else prove_print script property;
+  };
+
+/*
+ * This recursive function "folds" a binary function `f` over a list `xs`,
+ * starting with initial value `r`.
+ *
+ * e.g. `foldl concat [] [[1,2],[3,4,5],[6]]` returns `[1,2,3,4,5,6]`
+ */
+rec foldl f r xs =
+  if (null xs) then
+    r
+  else
+    foldl f (f r (head xs)) (tail xs)
+;

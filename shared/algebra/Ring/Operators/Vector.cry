@@ -1,0 +1,26 @@
+/*
+ * Description: This module provides common vector operations for Rings.
+ */
+
+module shared::algebra::Ring::Operators::Vector where
+
+import interface shared::algebra::Ring::Interface
+import shared::algebra::Ring::Operators::Scalar { interface Interface }
+
+/** vector type with `size` components of type `RingElement` */
+type Vector size = [size]RingElement
+
+/** vector addtion; associates left */
+infixl 80 |+
+(|+) : {size} Vector size -> Vector size -> Vector size
+(|+) = zipWith (.+)
+
+/** vector subtraction; associates left */
+infixl 80 |-
+(|-) : {size} Vector size -> Vector size -> Vector size
+(|-) = zipWith (.-)
+
+/** dot product; does not associate */
+infix 90 |*
+(|*) : {size} fin size => Vector size -> Vector size -> RingElement
+v |* w = foldl (.+) zro (zipWith (.*) v w)

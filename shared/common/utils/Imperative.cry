@@ -1,0 +1,26 @@
+/*
+ * Description: This module contains several utility functions that
+ * mimic imperative programming language constructs.
+ */
+
+module shared::common::utils::Imperative where
+
+/**
+ * This function provides while loop functionality.
+ */
+while : {a} (a -> Bit) -> (a -> a) -> a -> a
+while condition body initial_state =
+    if condition initial_state
+    then while condition body (body initial_state)
+    else initial_state
+
+/**
+ * This function provides do-while loop functionality.
+ */
+dowhile : {a} (a -> Bit) -> (a -> a) -> a -> a
+dowhile condition body initial_state = 
+    if condition next_state
+    then while condition body next_state
+    else next_state
+  where 
+    next_state = body initial_state

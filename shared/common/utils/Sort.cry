@@ -1,0 +1,40 @@
+/*
+ * Description: This module provides some functions dealing with
+ * sorting and sorted sequences.
+ */
+
+module shared::common::utils::Sort where
+
+/**
+ * Finds the index of an element using binary search. The input
+ * sequence is assumed to be sorted according to the given
+ * operator. In case of duplicates, this will find the leftmost
+ * element. If the element does not exist, this will return the index
+ * where the element could be inserted and maintain a sorted sequence.
+ */
+binarySearchBy :
+    {n, ix, a}
+    (fin n, Ring ix, Literal 0 ix, LiteralLessThan n ix, Eq a)
+ => (a -> a -> Bit) -> [n]a -> a -> (Bit, ix)
+binarySearchBy le xs e
+  | n == 0 => (False, 0)
+  | n > 0  => search`{0, n, (n-1) / 2}
+    where
+      search : {l, r, m} (fin l, fin r, fin m, fin n) => (Bit, ix)
+      search =
+          if `l >= `r then (if `l == `n then False else xs@`l == e, fromInteger `l)
+           | le (xs@`m) e then search`{m+1, r, (l + r) / 2}
+          else search`{l, m, (l + r) / 2}
+
+/**
+ * Insert an element into a sorted sequence.
+ */
+insertBy : {n, a}
+    (fin n)
+ => (a -> a -> Bit) -> [n]a -> a -> [n+1]a
+insertBy le xs e
+  | n == 0 => [e]
+  | n  > 0 => if le e m then insertBy le ls e # [m] # rs
+                        else ls # [m] # insertBy le rs e
+    where
+      (ls : [n/2]a) # [m] # (rs : [n/^2 - 1]a) = xs

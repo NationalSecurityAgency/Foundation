@@ -1,0 +1,33 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `algorithms/Keccak/StateConversions.cry`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+// Import the Cryptol specification for Keccak's `State` conversion functions.
+import "../StateConversions.cry";
+
+let verify_toStatetoStringProp (w : Int) : TopLevel Theorem =
+    proveit {{ toStatetoStringProp`{w} }} rme;
+
+let verify_toStringtoStateProp (w : Int) : TopLevel Theorem =
+    proveit {{ toStringtoStateProp`{w} }} rme;
+
+/*
+ * Verify public properties of `algorithms::Keccak::StateConversions`.
+ */
+let main : TopLevel [Theorem] = do {
+  toStatetoStringProp_lemmas <- for [32, 64] verify_toStatetoStringProp;
+  toStringtoStateProp_lemmas <- for [32, 64] verify_toStatetoStringProp;
+
+  summarize_verification;
+
+  return
+    (foldl concat []
+      [ toStatetoStringProp_lemmas
+      , toStringtoStateProp_lemmas
+      ]
+    );
+};

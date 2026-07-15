@@ -1,0 +1,43 @@
+/*
+ * Description: This module contains common utility functions
+ * related to sequence manipulation.
+ */
+
+module shared::common::utils::Sequence where 
+
+/**
+ * `init` returns all but the last element of a sequence. It is
+ * the complement of `last`.
+ */
+init : {a, b} (fin a) => [a+1]b -> [a]b
+init xs = take`{back = 1} xs
+
+/**
+ * This function interleaves (like a zipper) two sequences of the same
+ * length.
+ *
+ * ```
+ * :check interleave ["abc", "def"] == "adbecf"
+ * ```
+ */
+interleave : {n, m, a} (fin n) => [n][m]a -> [n * m]a 
+interleave x = join (transpose x)
+
+/** Test for `interleave` */
+interleave_2_check : Bool
+property interleave_2_check = 
+    interleave [ a, b ] == c
+  where
+    a = [ 1, 2, 3 ]          : [3]Integer
+    b = [ 4, 5, 6 ]          : [3]Integer
+    c = [ 1, 4, 2, 5, 3, 6 ] : [6]Integer
+
+/** Test for `interleave` */
+interleave_3_check : Bool
+property interleave_3_check =
+  interleave [ a, b, c ] == d
+    where
+      a = [ 1, 2 ]             : [2]Integer
+      b = [ 3, 4 ]             : [2]Integer
+      c = [ 5, 6 ]             : [2]Integer
+      d = [ 1, 3, 5, 2, 4, 6 ] : [6]Integer

@@ -1,0 +1,35 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `algorithms/Keccak/derived.cry`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+// Import the Cryptol specification for Keccak's derived functions.
+import "../derived.cry";
+
+let verify_right_encode_example : TopLevel Theorem =
+    proveit {{ right_encode_example }} rme;
+
+let verify_left_encode_example : TopLevel Theorem =
+    proveit {{ left_encode_example }} rme;
+
+let verify_encode_string_example : TopLevel Theorem =
+    proveit {{ encode_string_example }} rme;
+
+/*
+ * Verify public properties of `algorithms::Keccak::derived`.
+ */
+let main : TopLevel [Theorem] = do {
+  right_encode_example_lemma  <- verify_right_encode_example;
+  left_encode_example_lemma   <- verify_left_encode_example;
+  encode_string_example_lemma <- verify_encode_string_example;
+
+  summarize_verification;
+
+  return [ right_encode_example_lemma
+         , left_encode_example_lemma
+         , encode_string_example_lemma
+         ];
+};

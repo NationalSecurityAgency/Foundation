@@ -1,0 +1,73 @@
+/*
+ * Description: This module demonstrates how to use the
+ * `shared::algebra::Field::GF2n` module to construct GF(2^n) for n =
+ * 3.
+ */
+
+module shared::algebra::Field::GF2n::GF8Test where
+
+// Import and instantian a Field for GF2^n elements.
+
+import shared::algebra::Field::GF2n as GF2n
+  where
+    type n = 3
+    p = 0b1011
+
+// Import Field arithmetic, scalar, vector, and matrix operators for
+// elements in `GF2`.
+
+import submodule GF2n::Arithmetic
+import submodule GF2n::Scalar
+import submodule GF2n::Vector
+import submodule GF2n::Matrix 
+
+/**
+ * The following properties check a few scalar operation examples.
+ * 
+ * ```
+ * :check nontrivial_add_checks
+ * :check nontrivial_mul_checks
+ * ```
+ */
+property nontrivial_add_checks = and [ 0b010 .+ 0b100 == 0b110
+                                     , 0b011 .+ 0b101 == 0b110
+                                     , 0b110 .+ 0b010 == 0b100
+                                     ]
+property nontrivial_mul_checks = and [ 0b010 .* 0b100 == 0b011
+                                     , 0b011 .* 0b101 == 0b100
+                                     , 0b110 .* 0b010 == 0b111
+                                     ]
+
+/**
+ * The following properties test a few identities for GF(4).
+ * 
+ * ```
+ * :prove additiveInverses
+ * :prove fermat
+ * ```
+ */
+property additiveInverses x = x .+ x == zro
+property fermat x           = exp x 8 == x
+
+/**
+ * The following properties test a few vector arithmetic examples.
+ *
+ * ```
+ * :check vector_addition_check
+ * :check vector_dotproduct_check
+ * ```
+ */
+xs = [ 0b011, 0b110 , 0b111 ]
+ys = [ 0b100, 0b101 , 0b010 ]
+property vector_addition_check   = xs |+ ys == [ 0b111, 0b011, 0b101 ]
+property vector_dotproduct_check = xs |* ys == 0b001
+
+/**
+ * The following property tests a vector arithmetic property of GF(8).
+ * 
+ * ```
+ * :prove add_minus_property`{n=5}
+ * ```
+ */
+add_minus_property : {n} (fin n) => Vector n -> Vector n -> Bool
+property add_minus_property x y = x |+ y == x |- y

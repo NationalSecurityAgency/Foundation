@@ -1,0 +1,46 @@
+/*
+ * Description: This module contains a Cryptol specification for the
+ * functions used to convert between state strings and state arrays in
+ * the Keccak family of functions [FIPS-PUB-202].
+ */
+
+module algorithms::Keccak::StateConversions where
+import algorithms::Keccak::Types as Types
+
+/**
+ * The following function transforms a string state `S` into a state
+ * array `A` [FIPS-PUB-202 Section 3.1.2].
+ */
+toState : {w} (fin w) => Types::String w -> Types::State w
+toState S = A 
+  where
+    A@x@y = (split S : [25][w]) @ (5 * y + x)
+
+/**
+ * The following function transforms a state array `A` into a string
+ * state `S` [FIPS-PUB-202 Section 3.1.3].
+ */
+toString : {w} (fin w) => Types::State w -> Types::String w
+toString A = S 
+  where
+    S = join [ A@i@j | j <- [0..4], i <- [0..4] ]
+
+/**
+ * The following property shows that `toString` inverts `toState`.
+ * ```
+ * :prove toStatetoStringProp`{32}
+ * :prove toStatetoStringProp`{64}
+ * ```
+ */
+toStatetoStringProp : {w} (fin w) => Types::String w -> Bool
+property toStatetoStringProp S = toString (toState S) == S 
+
+/**
+ * The following property confirms that `toState` inverts `toString`.
+ * ```
+ * :prove toStringtoStateProp`{32}
+ * :prove toStringtoStateProp`{64}
+ * ```
+ */
+toStringtoStateProp : {w} (fin w) => Types::State w -> Bool
+property toStringtoStateProp S = toState (toString S) == S

@@ -1,0 +1,80 @@
+name: Build images
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  base:
+    uses: ./.github/workflows/infrastructure-build-image-template.yml
+    with:
+      dockerfile: "base"
+
+  cryptol-remote-api:
+    uses: ./.github/workflows/infrastructure-build-image-template.yml
+    with:
+      dockerfile: "cryptol-remote-api"
+
+  saw:
+    uses: ./.github/workflows/infrastructure-build-image-template.yml
+    with:
+      dockerfile: "saw"
+
+  saw-remote-api:
+    uses: ./.github/workflows/infrastructure-build-image-template.yml
+    with:
+      dockerfile: "saw-remote-api"
+
+  cryptol-remote-api-client:
+    needs: base
+    uses: ./.github/workflows/infrastructure-build-image-template.yml
+    with:
+      dockerfile: "cryptol-remote-api-client"
+
+  saw-remote-api-client:
+    needs: base
+    uses: ./.github/workflows/infrastructure-build-image-template.yml
+    with:
+      dockerfile: "saw-remote-api-client"
+
+  foundation-saw-base:
+    needs: base
+    uses: ./.github/workflows/infrastructure-build-image-template.yml
+    with:
+      dockerfile: "foundation-saw-base"
+
+  cargo:
+    needs: base
+    uses: ./.github/workflows/infrastructure-build-image-template.yml
+    with:
+      dockerfile: "cargo"
+
+  cargo-saw-build:
+    needs: base
+    uses: ./.github/workflows/infrastructure-build-image-template.yml
+    with:
+      dockerfile: "cargo-saw-build"
+
+  clang:
+    needs: base
+    uses: ./.github/workflows/infrastructure-build-image-template.yml
+    with:
+      dockerfile: "clang"
+
+  cryptol-tools:
+    needs: base
+    uses: ./.github/workflows/infrastructure-build-image-template.yml
+    with:
+      dockerfile: "cryptol-tools"
+
+  cryptol-dev:
+    needs: cryptol-tools
+    uses: ./.github/workflows/infrastructure-build-image-template.yml
+    with:
+      dockerfile: "cryptol-dev"
+
+  saw-dev:
+    needs: cryptol-tools
+    uses: ./.github/workflows/infrastructure-build-image-template.yml
+    with:
+      dockerfile: "saw-dev"

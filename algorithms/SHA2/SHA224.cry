@@ -1,0 +1,32 @@
+/*
+ * Description: This module specifies the Secure Hash Algorithm with a
+ * digest size of 224 bits (SHA-224) [FIPS-PUB-180-4 Section 6.3].
+ */
+module algorithms::SHA2::SHA224 = packaging::Hash where
+
+type _BlockSize  = 512
+type _DigestSize = 224
+type _UpperLimit = 64
+
+_hash = SHA224::hash
+
+import algorithms::SHA2::Notation (ROTR, SHR)
+import algorithms::SHA2::Preprocessing (H0_224)
+import algorithms::SHA2::Functions ( SIGMA_256_0
+                                  , SIGMA_256_1
+                                  , sigma_256_0
+                                  , sigma_256_1
+                                  , K_256)
+
+import algorithms::SHA2::Main as SHA224 where
+  type d = 224
+  type w = 32
+  type Klen = 64
+
+  H0 = H0_224
+  K = K_256
+
+  SIGMA_0 = SIGMA_256_0
+  SIGMA_1 = SIGMA_256_1
+  sigma_0 = sigma_256_0
+  sigma_1 = sigma_256_1

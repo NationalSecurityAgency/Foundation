@@ -1,0 +1,50 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties about
+ * CRC32 IEEE-802.3 Ethernet.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+// Import Cryptol specification for CRC32 IEEE-802.3 Ethernet.
+import "../CRC32_IEEE_802_3_Ethernet.cry" as CRC32_IEEE_802_3_Ethernet;
+
+let verify_magicCheckCorrect : TopLevel Theorem =
+    proveit {{ CRC32_IEEE_802_3_Ethernet::magicCheckCorrect`{8} }} rme;
+
+let verify_checkCorrect : TopLevel Theorem =
+    proveit {{ CRC32_IEEE_802_3_Ethernet::checkCorrect }} rme;
+
+let verify_reflectionReverse : TopLevel Theorem =
+    proveit {{ CRC32_IEEE_802_3_Ethernet::reflectionReverse }} rme;
+
+let verify_reflectionTests : TopLevel Theorem =
+    proveit {{ CRC32_IEEE_802_3_Ethernet::reflectionTests }} rme;
+
+let verify_CRCUpdateCorrect : TopLevel Theorem =
+    proveit {{ CRC32_IEEE_802_3_Ethernet::CRCUpdateCorrect`{8, 8} }} rme;
+
+let verify_CRCUpdateTest : TopLevel Theorem =
+    proveit {{ CRC32_IEEE_802_3_Ethernet::CRCUpdateTest }} rme;
+
+/*
+ * Verify public properties of `shared::CRC::CRC32_IEEE_802_3_Ethernet`.
+ */
+let main : TopLevel [Theorem] = do {
+  magicCheckCorrect_lemma <- verify_magicCheckCorrect;
+  checkCorrect_lemma <- verify_checkCorrect;
+  reflectionReverse_lemma <- verify_reflectionReverse;
+  reflectionTests_lemma <- verify_reflectionTests;
+  CRCUpdateCorrect_lemma <- verify_CRCUpdateCorrect;
+  CRCUpdateTest_lemma <- verify_CRCUpdateTest;
+
+  summarize_verification;
+
+  return [ magicCheckCorrect_lemma
+         , checkCorrect_lemma
+         , reflectionReverse_lemma
+         , reflectionTests_lemma
+         , CRCUpdateCorrect_lemma
+         , CRCUpdateTest_lemma
+         ];
+};

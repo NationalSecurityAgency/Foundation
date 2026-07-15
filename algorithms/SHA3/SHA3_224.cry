@@ -1,0 +1,17 @@
+/*
+ * Description: This is a Cryptol specification for the Secure Hash
+ * Algorithm-3 224 (SHA3-224) [FIPS-PUB-202 Section 6.1].
+ */
+
+module algorithms::SHA3::SHA3_224 = packaging::Hash where
+
+import algorithms::Keccak::Main (Keccak, bitReordering)
+
+type _BlockSize  = 144 * 8
+type _DigestSize = 224
+type _UpperLimit = inf
+
+_hash M = bitReordering R
+  where
+    M' = bitReordering M
+    R  = Keccak`{448, _DigestSize} (M' # 0b01)

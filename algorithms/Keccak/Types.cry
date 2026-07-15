@@ -1,0 +1,20 @@
+/*
+ * Description: This is a Cryptol specification for the types needed
+ * to specify the Keccak family of algorithms.
+ */
+
+module algorithms::Keccak::Types where
+
+/**
+ * The `State` type is a 5-by-5-by-w array of bits that represents the
+ * state for a Keccak-p permutation.  The indices for x, y, and z
+ * coordinates range from 0 to 4, 0 to 4, and 0 to `w-1`, respectively
+ * [FIPS-PUB-202 Section 2.1].
+ */
+type State w = [5][5][w]
+
+/**
+ * The `String` type is a 5*5*w array of bits that also represents the
+ * state of a Keccak-p permutation [FIPS-PUB-202 Section 2.1].
+ */
+type String w = [5*5*w]

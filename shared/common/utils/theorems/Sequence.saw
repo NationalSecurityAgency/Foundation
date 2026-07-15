@@ -1,0 +1,30 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `shared/common/utils/Sequence.cry`.
+ */
+
+// Include common SAW utilities.
+include "../../../../shared/SAW/utils.saw";
+
+// Import the Cryptol specification for sequence functions.
+import "../Sequence.cry";
+
+let verify_interleave_2_check : TopLevel Theorem =
+    proveit {{ interleave_2_check }} rme;
+
+let verify_interleave_3_check : TopLevel Theorem =
+    proveit {{ interleave_3_check }} rme;
+
+/*
+ * Verify public properties of `shared::common::utils::Sequence`.
+ */
+let main : TopLevel [Theorem] = do {
+  interleave_2_check_lemma <- verify_interleave_2_check;
+  interleave_3_check_lemma <- verify_interleave_3_check;
+
+  summarize_verification;
+
+  return [ interleave_2_check_lemma
+         , interleave_3_check_lemma
+         ];
+};

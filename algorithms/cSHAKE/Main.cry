@@ -1,0 +1,77 @@
+/*
+ * Description: This module provides the eXtendable Output Function
+ * (XOF) cSHAKE based on Keccak [NIST-SP-800-185 Section 3].
+ */
+
+module algorithms::cSHAKE::Main where
+
+import algorithms::Keccak::derived (bytepad, encode_string)
+import algorithms::Keccak::Main (Keccak, bitReordering)
+import algorithms::SHAKE::Main (SHAKE128, SHAKE256)
+
+/**
+ * `cSHAKE128` is defined in terms of the `SHAKE` and `KECCAK[c]`
+ * functions [FIPS-PUB-202] and provides a 128-bit security strength
+ * [NIST-SP-800-185 Section 3.3].
+ *
+ * Inputs: 
+ *   `X`: The main input bit string. It may be of any length,
+ *        including zero.
+ *   `N`: A function-name bit string, used by NIST to define
+ *        functions based on `cSHAKE128`. When no function other
+ *        than `cSHAKE128` is desired, `N` is set to the empty string.
+ *   `S`: A customization bit string. The user selects this string
+ *        to define a variant of the function. When no customization
+ *        is desired, `S` is set to the empty string.
+ *
+ * Notable types:
+ *   `L`: An integer representing the requested output length in
+ *        bits.
+ */
+cSHAKE128 :
+    { L, a, n, s }
+    ( fin a, n < 2 ^^ 2040, s < 2 ^^ 2040 )
+ => [a] -> [n] -> [s] -> [L]
+cSHAKE128 X N S =
+    if length N == 0 /\ length S == 0 then
+      SHAKE128`{L, a} X
+    else
+      bitReordering (Keccak`{256, L} (bytepad`{168} (encode_string N' # encode_string S') # X' # 0b00))
+  where
+    X' = bitReordering X
+    N' = bitReordering N
+    S' = bitReordering S
+
+/**
+ * `cSHAKE256` is defined in terms of the `SHAKE` and `KECCAK[c]`
+ * functions [FIPS-PUB-202] and provides a 256-bit security strength
+ * [NIST-SP-800-185 Section 3.3].
+ *
+ * Inputs: 
+ *   `X`: The main input bit string. It may be of any length,
+ *        including zero.
+ *   `N`: A function-name bit string, used by NIST to define
+ *        functions based on `cSHAKE256`. When no function other
+ *        than `cSHAKE256` is desired, `N` is set to the empty string.
+ *   `S`: A customization bit string. The user selects this string
+ *        to define a variant of the function. When no customization
+ *        is desired, `S` is set to the empty string.
+ *
+ * Notable types:
+ *   `L`: An integer representing the requested output length in
+ *        bits.
+ */
+cSHAKE256 :
+    { L, a, n, s }
+    ( fin a, n < 2 ^^ 2040, s < 2 ^^ 2040 )
+ => [a] -> [n] -> [s] -> [L]
+cSHAKE256 X N S =
+    if length N == 0 /\ length S == 0 then
+      SHAKE256`{L, a} X
+    else
+      bitReordering (Keccak`{512, L} (bytepad`{136} (encode_string N' # encode_string S') # X' # 0b00))
+  where
+    X' = bitReordering X
+    N' = bitReordering N
+    S' = bitReordering S
+    

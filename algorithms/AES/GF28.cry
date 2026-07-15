@@ -1,0 +1,32 @@
+/*
+ * Description: This is a Cryptol specification of the GF(2^^8)
+ * routines in the Advanced Encryption Standard (AES) [FIPS-PUB-197].
+ */
+
+module algorithms::AES::GF28 where
+
+/**
+ * The `•` symbol denotes multiplication in GF(2^^8) [FIPS-PUB-197
+ * Section 4.2].
+ */
+(•) : [8] -> [8] -> [8]
+(•) b c = pmod (pmult b c) m
+  where m = <| x^^8 + x^^4 + x^^3 + x + 1 |>
+
+/**
+ * This function performs the product of `b • 0x02` and is implemented
+ * here at the byte level as a left shift and a subsequent conditional
+ * bitwise XOR with `0x1b` [FIPS-PUB-197 Section 4.2].
+ */
+xTimes : [8] -> [8]
+xTimes b = b << 1 ^ (if head b then 0x1b else 0x00)
+
+/**
+ * This property demonstrates that Cryptol's built-in polynomial
+ * arithmetic is functionally equivalent to AES's GF(2^^8)
+ * multiplication routine [FIPS-PUB-197 Section 4.2].
+ */
+GF28MultiplicationCorrect : [8] -> [8] -> Bool
+property GF28MultiplicationCorrect b c =
+    xTimes b == b • 2
+ /\ b • c == foldl (\a bi -> xTimes a ^ if bi then c else 0x00) 0x00 b

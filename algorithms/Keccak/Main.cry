@@ -1,0 +1,137 @@
+/*
+ * Description: This is a Cryptol specification for the Secure Hash
+ * Algorithm-3 (SHA-3) family of functions on binary data. Each of
+ * the SHA-3 functions is based on an instance of the Keccak algorithm
+ * that NIST selected as the winner of the SHA-3 Cryptographic Hash
+ * Algorithm Competition. This Cryptol spec is also for the Keccak-p
+ * family of mathematical permutations, including the permutation that
+ * underlies Keccak, in order to facilite the development of
+ * additional permutation-based cryptographic functions
+ * [FIPS-PUB-202].
+ */
+
+module algorithms::Keccak::Main where
+
+import algorithms::Keccak::Types
+import algorithms::Keccak::StepMappings
+import shared::sponge::Main as sponge
+
+/**
+ * The conversion function from hexadecimal strings to the SHA-3
+ * strings that they represent [FIPS-PUB-202 Section B.1].
+ */
+h2b : {n, m} (n <= 8 * m) => [m * 2 * 4] -> [n]
+h2b H
+  | fin n    => take (join (map reverse Hs))
+                  where Hs = groupBy`{8} H : [m][8]
+  | n == inf => join (map reverse Hs)  // avoid `take`
+                  where Hs = groupBy`{8} H : [m][8]
+
+/** Test for `h2b` [FIPS-PUB-202 Section B.1] */
+property h2bTest = h2b`{14} 0xA32E == 0b1100_0101_0111_01
+
+/**
+ * The conversion function from SHA-3 bit strings to the hexadecimal
+ * strings that represent them [FIPS-PUB-202 Section B.1].
+ */
+b2h : {n} (fin n) => [n] -> [n + n %^ 8]
+b2h S = H
+  where
+    T = S # zero : [n + n %^ 8]
+    H = h2b`{m = n /^ (2 * 4)} T
+
+/**
+ * Property demonstrating that `h2b` inverts `b2h`.
+ *
+ * ```
+ * :prove h2bInvertsb2h`{0}
+ * :prove h2bInvertsb2h`{1}
+ * :prove h2bInvertsb2h`{10}
+ * ```
+ */
+h2bInvertsb2h : {n} (fin n) => [n] -> Bool
+property h2bInvertsb2h S = h2b`{n, n /^ 8} (b2h S) == S
+
+/**
+ * Property demonstrating that `b2h` inverts `h2b`.
+ * Essentially, this transformation preserves all the full bytes of
+ * `H` and zeros out the first `n %^ 8` residual bits in the last
+ * partial byte, if one exists.
+ *
+ * ```
+ * :prove b2hInvertsh2b`{0, 0}
+ * :prove b2hInvertsh2b`{0, 1}
+ * :prove b2hInvertsh2b`{1, 1}
+ * :prove b2hInvertsh2b`{7, 1}
+ * :prove b2hInvertsh2b`{8, 1}
+ * :prove b2hInvertsh2b`{101, 33}
+ * ```
+ */
+b2hInvertsh2b : {n, m} (fin m, n <= 8 * m) => [m * 2 * 4] -> Bool
+property b2hInvertsh2b H = b2h (h2b`{n, m} H) == L # z # R
+  where
+    L = take`{n - n % 8} H
+    z = zero`{[n %^ 8]}
+    R = drop`{back=n % 8} (take`{n + n %^ 8} H)
+
+/**
+ * Keccak employs a involutory bit-reordering function to swap between
+ * binary and hexadecimal representations. Specifically, "In binary
+ * representation, bytes are written with the low-order bit first,
+ * while in hexadecimal representation, bytes are written with the
+ * high-order digit first. E.g., 0x01 = 10000000 and 0x80 = 00000001."
+ * [NIST-SP-800-185 Section 2]. Note that `take`ing `n` bits from a
+ * reordered *infinte* sequence can give a different result than
+ * reordering a finite sequence of length `n`. Namely, the residual
+ * bits in any final partial byte may be different. For example:
+ * ```
+ * > take`{12} (bitReordering (0x123 # zero : [inf]))
+ * 0x480
+ * > bitReordering 0x123
+ * 0x483
+ * ```
+ */
+bitReordering : {a} [a] -> [a]
+bitReordering x
+  | fin a    => h2b`{m = (a - a % 8) / 8} bytes # bits
+      where (bytes, bits) = splitAt`{front = a - (a % 8), back = a % 8} x
+  | a == inf => h2b`{m = a} x
+
+/**
+ * Property demonstrating that `bitReordering` is an involution.
+ *
+ * ```
+ * :prove bitReorderingIsAnInvolution`{0}
+ * :prove bitReorderingIsAnInvolution`{1}
+ * :prove bitReorderingIsAnInvolution`{31}
+ * :prove bitReorderingIsAnInvolution`{32}
+ * :prove bitReorderingIsAnInvolution`{33} 
+ * :prove bitReorderingIsAnInvolution`{100}
+ * ```
+ */
+bitReorderingIsAnInvolution : {a} (fin a) => [a] -> Bool
+property bitReorderingIsAnInvolution x = bitReordering (bitReordering x) == x
+
+/**
+ * This property demonstrates that `take`ing `n` bits from a reordered
+ * *infinte* sequence can give a different result than reordering a
+ * finite sequence of length `n`. Namely, the residual bits in any
+ * final partial byte may be different. This is something to be aware
+ * of when working with infinite sequences, e.g. XOFs.
+ */
+bitReorderingInfIssue : Bool
+property bitReorderingInfIssue =
+    take`{12} (bitReordering (0x123 # zero : [inf])) == 0x480
+ /\ bitReordering 0x123 == 0x483
+
+/**
+ * The following defines the Keccak family of functions. In
+ * particular, Keccak[c] = sponge[Keccak_p[1600, 24], pad10*1, 1600 -
+ * c] [FIPS-PUB-202].
+ */
+Keccak : 
+    {c, d, a}
+    (fin c, 1600 > c, fin a)
+ => [a] -> [d]
+Keccak N =
+    take`{d, inf} (sponge::sponge`{b=1600, r=1600-c} Keccak_p_w64_nr24 (sponge::pad10s1 N))

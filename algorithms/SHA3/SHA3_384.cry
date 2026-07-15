@@ -1,0 +1,17 @@
+/*
+ * Description: This is a Cryptol specification for the Secure Hash
+ * Algorithm-3 384 (SHA3-384) [FIPS-PUB-202 Section 6.1].
+ */
+
+module algorithms::SHA3::SHA3_384 = packaging::Hash where
+
+import algorithms::Keccak::Main (Keccak, bitReordering)
+
+type _BlockSize  = 104 * 8
+type _DigestSize = 384
+type _UpperLimit = inf
+
+_hash M = bitReordering R
+  where
+    M' = bitReordering M
+    R  = Keccak`{768, _DigestSize} (M' # 0b01)

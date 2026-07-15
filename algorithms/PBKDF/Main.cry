@@ -1,0 +1,53 @@
+/*
+ * Description: This is a Cryptol specification for a family of
+ * Password-Based Key Derivation Functions (PBKDFs) to derive
+ * cryptographic keying material from a password or 
+ * passphrase using an approved keyed-Hash Message Authentication
+ * Code (HMAC) [NIST-SP-800-132, FIPS-PUB-198-1].
+ */
+
+module algorithms::PBKDF::Main where
+
+/**
+ * The PBKDF2 function is used to derive cryptographic keying material
+ * from a password or passphrase.
+ *
+ * Inputs:
+ *   `HMAC0, HMACj`: The same HMAC using different length text 
+ *       inputs. Each has block size `hLen`-bits.
+ *   `P`: A `k`-byte passphrase.
+ *   `S`: The salt, represented as a binary string. `S` should be
+ *       generated using an approved Random Bit Generator and should
+ *       be at least 128-bits.
+ *   `C`: A fixed value that determines how many times the PRF/HMAC
+ *       iterates to generate one block of the Master Key.
+ *
+ * Outputs:
+ *   `mk`: A `kLen`-bit Master Key.
+ * 
+ * Types:
+ *   `hLen`: Length of the ouptut PRF/HMAC in bits.
+ *   `kLen`: Length of the output of PBKDF in bits.
+ *   `k`   : Length of the password `P` in bytes.
+ *   `sLen`: Length of the salt `S` in bits.
+ */
+PBKDF2 :
+    { hLen, kLen, k, sLen }
+    ( fin hLen, hLen >= 1
+    , kLen >= 112, kLen <= (2^^32 - 1) * hLen
+    , fin k
+    , fin sLen, sLen >= 128 
+    )
+ => ([k][8] -> [sLen + 32] -> [hLen])  // HMAC for initialization
+ -> ([k][8] -> [hLen]      -> [hLen])  // HMAC for inner loop
+ -> [k][8]                             // `P`
+ -> [sLen]                             // `S`
+ -> Integer                            // `C`
+ -> [kLen]                             // `mk`
+PBKDF2 HMAC0 HMACj P S C = mk
+  where
+    type len        = kLen /^ hLen
+    U0s             = parmap (\i -> HMAC0 P (S # i)) [ 1 .. len ]
+    states          = parmap (\U0i -> iterate step [ 0, U0i ] @ C) U0s
+    step [ Ti, Uj ] = [ Ti ^ Uj, HMACj P Uj ]
+    mk              = take (join [ Ti | [ Ti, _ ] <- states ])

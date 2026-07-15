@@ -1,0 +1,76 @@
+/*
+ * Description: This module demonstrates how to use the `Z p` Field.
+ */
+
+module shared::algebra::Field::Zp::Test where
+
+// Import and instantiate a Field for `Z p` elements.
+import `shared::algebra::Field::Zp as Zp
+
+// Import Field arithmetic, scalar, vector, and matrix operations for
+// elements in `Z p'.
+import submodule Zp::Arithmetic 
+import submodule Zp::Scalar 
+import submodule Zp::Vector 
+import submodule Zp::Matrix 
+
+// Some test follow.
+
+type p = 71
+
+// Zp::Arithmetic tests
+
+property mem_property = mem x
+property zro_property = zro`{p} == 0
+property one_property = one`{p} == 1
+
+// Zp::Scalar tests
+
+x = 36 : Z p 
+y = 63 : Z p 
+property test_add = x .+ y == 28
+property test_neg = neg x == 35
+property test_mul = x .* y == 67
+property test_rec = rec x == 2
+
+// Zp::Vector tests
+
+xs = [ 26, 5, 44, 35 ] : Vector p 4
+ys = [ 46, 1,  0, 10 ] : Vector p 4
+property test_vec_add = xs |+ ys == [ 1, 6, 44, 45 ]
+property test_vec_sub = [ 1, 6, 44, 45] |- xs == ys 
+property test_vec_dot = xs |* ys == 60
+
+// Zp::Matrix tests
+
+xss = [ [ 26,  5, 44, 35 ]
+      , [  4, 22, 17, 54 ]
+      , [ 60, 19,  3,  5 ]
+      ] : Matrix p 3 4
+yss = [ [ 46,  1,  0 ] 
+      , [  3, 63, 36 ]
+      , [ 63, 11, 18 ]
+      , [ 58, 55, 60 ]
+      ] : Matrix p 4 3
+
+property test_matrix_add =
+    xss #+ xss
+  == [ [ 52, 10, 17, 70 ]
+     , [  8, 44, 34, 37 ]
+     , [ 49, 38,  6, 10 ]
+     ] 
+
+property test_matrix_sub = 
+    yss #- yss 
+  == [ [ 0, 0, 0 ]
+     , [ 0, 0, 0 ]
+     , [ 0, 0, 0 ]
+     , [ 0, 0, 0 ]
+     ]
+
+property text_matrix_mul = 
+    xss #* yss 
+  == [ [ 49, 52, 19 ]
+     , [ 51,  3,  7 ]
+     , [ 30,  3, 44 ]
+     ]

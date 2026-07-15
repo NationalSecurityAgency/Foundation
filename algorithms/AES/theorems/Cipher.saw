@@ -1,0 +1,143 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `algorithms/AES/Cipher.cry`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+// Import the Cryptol specification for AES's `Cipher` and `InvCipher`
+// routines.
+import "../Cipher.cry";
+
+let verify_SubBytesInverts : TopLevel Theorem =
+    proveit {{ SubBytesInverts }} rme;
+
+let verify_ShiftRowsInverts : TopLevel Theorem =
+    proveit {{ ShiftRowsInverts }} rme;
+
+let verify_MixColumnsStepInverts : TopLevel Theorem =
+    proveit {{ MixColumnsStepInverts }} rme;
+
+let verify_MixColumnsInverts : TopLevel Theorem =
+  do {
+    MixColumnsStepInverts_lemma <- verify_MixColumnsStepInverts;
+
+    proveit {{ MixColumnsInverts }}
+      do {
+        goal_normalize ["InvMixColumnsStep", "MixColumnsStep"];
+        use_lemmas [ MixColumnsStepInverts_lemma ];
+        goal_eval; trivial;
+      };
+  };
+
+let verify_AddRoundKeyInvolution : TopLevel Theorem =
+    proveit {{ AddRoundKeyInvolution }} rme;
+
+let verify_RoundInverts : TopLevel Theorem =
+  do {
+    AddRoundKeyInvolution_lemma <- verify_AddRoundKeyInvolution;
+    SubBytesInverts_lemma       <- verify_SubBytesInverts;
+    ShiftRowsInverts_lemma      <- verify_ShiftRowsInverts;
+    MixColumnsInverts_lemma     <- verify_MixColumnsInverts;
+  
+    proveit {{ RoundInverts }}
+      do {
+        goal_normalize [ "AddRoundKey"
+                       , "SubBytes"  , "InvSubBytes"
+                       , "ShiftRows" , "InvShiftRows"
+                       , "MixColumns", "InvMixColumns"
+                       ];
+        use_lemmas [ AddRoundKeyInvolution_lemma
+                   , SubBytesInverts_lemma
+                   , ShiftRowsInverts_lemma
+                   , MixColumnsInverts_lemma
+                   ];
+        goal_eval; trivial;
+      };
+  };
+
+// This parameterized lemma will be proven at all 3 key sizes (128,
+// 192, and 256).
+
+let verify_InvCipherEquivalence (KeySize : Int) : TopLevel Theorem =
+  do {
+    proveit {{ InvCipherEquivalence`{KeySize} }}
+      do {
+        goal_normalize [ "AddRoundKey"
+                       , "InvSubBytes"
+                       , "InvShiftRows"
+                       , "InvMixColumns"
+                       ];
+        simplify (add_prelude_eqs ["bvEq_refl"] empty_ss);
+        goal_eval; trivial;
+      };
+  };
+
+let verify_CipherInverts (KeySize : Int) : TopLevel Theorem =
+  do {
+    AddRoundKeyInvolution_lemma <- verify_AddRoundKeyInvolution;
+    SubBytesInverts_lemma       <- verify_SubBytesInverts;
+    ShiftRowsInverts_lemma      <- verify_ShiftRowsInverts;
+    MixColumnsInverts_lemma     <- verify_MixColumnsInverts;
+
+    proveit {{ CipherInverts`{KeySize} }}
+      do {
+        goal_normalize [ "AddRoundKey"
+                       , "SubBytes"  , "InvSubBytes"
+                       , "ShiftRows" , "InvShiftRows"
+                       , "MixColumns", "InvMixColumns"
+                       ];
+        use_lemmas [ AddRoundKeyInvolution_lemma
+                   , SubBytesInverts_lemma
+                   , ShiftRowsInverts_lemma
+                   , MixColumnsInverts_lemma
+                   ];
+        goal_eval; trivial;
+      };
+  };
+
+// This parameterized lemma will be proven at all 3 key sizes (128,
+// 192, and 256).
+
+let verify_CipherInverts' (KeySize : Int) : TopLevel Theorem =
+  do {
+    AddRoundKeyInvolution_lemma <- verify_AddRoundKeyInvolution;
+    SubBytesInverts_lemma       <- verify_SubBytesInverts;
+    ShiftRowsInverts_lemma      <- verify_ShiftRowsInverts;
+    RoundInverts_lemma          <- verify_RoundInverts;
+
+    proveit {{ CipherInverts'`{KeySize} }}
+      do {
+        goal_normalize [ "AddRoundKey"
+                       , "SubBytes" , "InvSubBytes"
+                       , "ShiftRows", "InvShiftRows"
+                       , "Round"    , "InvRound'"
+                       ];
+        use_lemmas [ AddRoundKeyInvolution_lemma
+                   , SubBytesInverts_lemma
+                   , ShiftRowsInverts_lemma
+                   , RoundInverts_lemma
+                   ];
+        goal_eval; trivial;
+      };
+  };
+
+/*
+ * Verify public properties of `algorithms::AES::Cipher`.
+ */
+let main : TopLevel [Theorem] = do {
+  CipherInverts_lemmas        <- for [128, 192, 256] verify_CipherInverts;
+  CipherInverts'_lemmas       <- for [128, 192, 256] verify_CipherInverts';
+  InvCipherEquivalence_lemmas <- for [128, 192, 256] verify_InvCipherEquivalence;
+
+  summarize_verification;
+
+  return
+    (foldl concat []
+      [ CipherInverts_lemmas
+      , CipherInverts'_lemmas
+      , InvCipherEquivalence_lemmas
+      ]
+    );
+};

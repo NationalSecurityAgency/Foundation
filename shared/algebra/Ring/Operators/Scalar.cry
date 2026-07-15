@@ -1,0 +1,27 @@
+/*
+ * Description: This module provides common scalar operations for Rings.
+ */
+
+module shared::algebra::Ring::Operators::Scalar where
+
+import interface shared::algebra::Ring::Interface
+
+/** addition */
+infixl 80 .+
+(.+) : RingElement -> RingElement -> RingElement
+(.+) = add
+
+/** subtraction */
+infixl 80 .-
+(.-) : RingElement -> RingElement -> RingElement
+x .- y = x .+ (neg y)
+
+/** multiplication */
+infixl 90 .*
+(.*) : RingElement -> RingElement -> RingElement
+(.*) = mul
+
+/** exponentiation */
+infixr 95 .^^
+(.^^) : {e} (Cmp e, Integral e, Literal 1 e) => RingElement -> e -> RingElement
+(.^^) = exp

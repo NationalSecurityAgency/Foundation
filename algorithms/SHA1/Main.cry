@@ -1,0 +1,49 @@
+/*
+ * Description: This module specifies the Secure Hash Algorithm 1
+ * (SHA-1) [FIPS-PUB-180-4 Section 6.1].
+ */
+module algorithms::SHA1::Main = packaging::Hash where
+
+type _BlockSize  = 512
+type _DigestSize = 160
+type _UpperLimit = 64
+
+_hash = hash
+
+import algorithms::SHA2::Notation (ROTL)
+import algorithms::SHA2::Preprocessing (parse, pad, H0_SHA1)
+import algorithms::SHA2::Functions (Ch, Parity, Maj, f, K_SHA1)
+
+/**
+ * "SHA-1 may be used to hash a message, `M`, having a length of `l`
+ * bits, where `0 <= l < 2^^64`...The final result of SHA-1 is a
+ * 160-bit message digest [FIPS-PUB-180-4 Section 6.1]."
+ */
+hash : {l} (width l <= 64) => [l] -> [160]
+hash M = join H
+  where
+    type k = (l + 1 + 64) %^ 512  // [FIPS-PUB-180-4 Section 5.1.1]
+    type N = (l + 1 + 64) /^ 512  // [FIPS-PUB-180-4 Section 5.2.1]
+    M' = parse`{32, N} (pad`{512, 32, l, k} M)
+    H = foldl step H0_SHA1 M'
+
+/**
+ * Inner loop of SHA-1 that processes a single message block `M`
+ * [FIPS-PUB-180-4 Section 6.1.2].
+ */
+step : [5][32] -> [16][32] -> [5][32]
+step H M = H + H'  // Step 4 [FIPS-PUB-180-4 Section 6.1.2].
+  where
+    W : [80][32]   // Step 1 [FIPS-PUB-180-4 Section 6.1.2].
+    W@t = if t <= 15 then M @ t
+          else            ROTL`{1} (W@(t-3) ^ W@(t-8) ^ W@(t-14) ^ W@(t-16))
+    H' : [5][32]   // Steps 2 and 3 [FIPS-PUB-180-4 Section 6.1.2].
+    H' = foldl step3 H [0 .. 79]
+    step3 : [5][32] -> Integer -> [5][32]
+    step3 [a, b, c, d, e] t =
+        [ ROTL`{5} a + (f@t) (b, c, d) + e + K_SHA1@t + W@t
+        , a
+        , ROTL`{30} b
+        , c
+        , d
+        ]

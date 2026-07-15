@@ -1,0 +1,24 @@
+/*
+ * Description: This module provides a Field for integers modulo `p`,
+ * where `p` is prime.
+ */
+
+module shared::algebra::Field::Zp where
+
+parameter
+  /** prime base for module integer field */
+  type p : #
+  type constraint prime p 
+
+/** `Arithmetic` instance for `Z p` */
+submodule Arithmetic = shared::algebra::Field::Primitive::Functor where
+  type FieldElement = Z p
+
+/** Scalar operators for `Z p` */
+submodule Scalar = shared::algebra::Field::Operators::Scalar { submodule Arithmetic }
+
+/** Vector operators for `Z p` */
+submodule Vector = shared::algebra::Field::Operators::Vector { submodule Arithmetic }
+
+/** Matrix operators for `Z p` */
+submodule Matrix = shared::algebra::Field::Operators::Matrix { submodule Arithmetic }

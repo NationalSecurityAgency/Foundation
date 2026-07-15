@@ -1,0 +1,32 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `algorithms/SHA2`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+include "Notation.saw";
+let Notation_main = main;
+
+include "Preprocessing.saw";
+let Preprocessing_main = main;
+
+/*
+ * Script to run on command line:
+ *   `saw all.saw`
+ * Return:
+ *   `TopLevel [Theorem]` verifying all lemmas used throughout `algorithms/SHA2`.
+ */
+let main : TopLevel [Theorem] = do {
+  Notation_lemmas      <- Notation_main;
+  Preprocessing_lemmas <- Preprocessing_main;
+
+  summarize_verification;
+
+  return
+    (foldl concat []
+      [ Notation_lemmas
+      , Preprocessing_lemmas
+      ]);
+};

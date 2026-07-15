@@ -1,0 +1,66 @@
+/*
+ * Description: This module contains some of the functions described
+ * in "Cryptographic sponge functions" [CSF-0.1].
+ */
+
+module shared::sponge::Main where
+
+/**
+ * The sponge construction performs absorb and squeeze [CSF-0.1
+ * Section 2.3]. Padding is left to the calling function.
+ */
+sponge :
+    { b, r, a }
+    ( fin b, fin r, r > 0, r <= b, fin a )
+ => ([b] -> [b]) -> [a][r] -> [inf]
+sponge f P = Z
+  where
+    s = absorb f P
+    Z = squeeze`{r = r} f s
+
+/**
+ * Appends a single bit 1 followed by the minimum number of 0 bits
+ * such that the length of the result is a multiple of the block
+ * length [CSF-0.1 Section 2.1.2].
+ */
+pad10s :
+    { r, b }
+    ( fin r, fin b, r > 0 )
+ => [b] -> [(b+1) /^ r][r]
+pad10s M = split ( M # [True] # zero )
+
+/**
+ * Appends a single 1 bit followed by the minimum number of 0 bits
+ * followed by a single 1 bit such that the length of the result is a
+ * multiple of the block length [CSF-0.1 Section 2.1.2].
+ */
+pad10s1:
+    { r, b }
+    ( fin r, fin b, r > 0 )
+ => [b] -> [(b+2) /^ r][r]
+pad10s1 M = split ( M # [True] # zero # [True] )
+
+private
+
+  /**
+   * `r`-bit input message blocks are XORed into the first `r` bits of
+   * the state, interleaved with applications of the function `f`
+   * [CFS-0.1 Section 2.4.1].
+   */
+  absorb :
+      { b, a, r }
+      ( fin b, fin a, r <= b )
+   => ([b] -> [b]) -> [a][r] -> [b]
+  absorb f P = last s
+    where
+      s = [0] # [ f ( si ^ ( Pi # 0 ) ) | si <- s | Pi <- P ]
+
+  /**
+   * Concatenation of the left-most `r` bits of compositions of `f`
+   * [CSF-0.1 Section 2.4.2].
+   */
+  squeeze :
+      { b, r }
+      ( fin b, r > 0, r <= b )
+   => ([b] -> [b]) -> [b] -> [inf]
+  squeeze f s = join ( map take`{r} ( iterate f s ) )

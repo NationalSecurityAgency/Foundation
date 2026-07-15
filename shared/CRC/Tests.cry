@@ -1,0 +1,83 @@
+/*
+ * Description: This module holds tests for public functions in the
+ * Cryptol specifications for instantiations of `shared::CRC::Main`
+ * [AUTOSAR].
+ */
+module shared::CRC::Tests where
+
+import shared::CRC::CRC8_SAE_J1850 as CRC8_SAE_J1850
+/** Test vectors for CRC8 SAE J1850 [AUTOSAR Section 7.2.1.1] */
+property CRC8_SAE_J1850PassesTests =
+    CRC8_SAE_J1850::CRC 0x00000000           == 0x59
+ /\ CRC8_SAE_J1850::CRC 0xF20183             == 0x37
+ /\ CRC8_SAE_J1850::CRC 0x0FAA0055           == 0x79
+ /\ CRC8_SAE_J1850::CRC 0x00FF5511           == 0xB8
+ /\ CRC8_SAE_J1850::CRC 0x332255AABBCCDDEEFF == 0xCB
+ /\ CRC8_SAE_J1850::CRC 0x926B55             == 0x8C
+ /\ CRC8_SAE_J1850::CRC 0xFFFFFFFF           == 0x74
+
+import shared::CRC::CRC8_H2F as CRC8_H2F
+/** Test vectors for CRC8 H2F [AUTOSAR Section 7.2.1.2] */
+property CRC8_H2FPassesTests =
+    CRC8_H2F::CRC 0x00000000           == 0x12
+ /\ CRC8_H2F::CRC 0xF20183             == 0xC2
+ /\ CRC8_H2F::CRC 0x0FAA0055           == 0xC6
+ /\ CRC8_H2F::CRC 0x00FF5511           == 0x77
+ /\ CRC8_H2F::CRC 0x332255AABBCCDDEEFF == 0x11
+ /\ CRC8_H2F::CRC 0x926B55             == 0x33
+ /\ CRC8_H2F::CRC 0xFFFFFFFF           == 0x6C
+
+import shared::CRC::CRC16_CCITT_FALSE as CRC16_CCITT_FALSE
+/** Test vectors for CRC8 H2F [AUTOSAR Section 7.2.2.1] */
+property CRC16_CCITT_FALSEPassesTests =
+    CRC16_CCITT_FALSE::CRC 0x00000000           == 0x84C0
+ /\ CRC16_CCITT_FALSE::CRC 0xF20183             == 0xD374
+ /\ CRC16_CCITT_FALSE::CRC 0x0FAA0055           == 0x2023
+ /\ CRC16_CCITT_FALSE::CRC 0x00FF5511           == 0xB8F9
+ /\ CRC16_CCITT_FALSE::CRC 0x332255AABBCCDDEEFF == 0xF53F
+ /\ CRC16_CCITT_FALSE::CRC 0x926B55             == 0x0745
+ /\ CRC16_CCITT_FALSE::CRC 0xFFFFFFFF           == 0x1D0F
+
+import shared::CRC::CRC16_ARC as CRC16_ARC
+/** Test vectors for CRC8 H2F [AUTOSAR Section 7.2.2.2] */
+property CRC16_ARCPassesTests =
+    CRC16_ARC::CRC 0x00000000           == 0x0000
+ /\ CRC16_ARC::CRC 0xF20183             == 0xC2E1
+ /\ CRC16_ARC::CRC 0x0FAA0055           == 0x0BE3
+ /\ CRC16_ARC::CRC 0x00FF5511           == 0x6CCF
+ /\ CRC16_ARC::CRC 0x332255AABBCCDDEEFF == 0xAE98
+ /\ CRC16_ARC::CRC 0x926B55             == 0xE24E
+ /\ CRC16_ARC::CRC 0xFFFFFFFF           == 0x9401
+
+import shared::CRC::CRC32_IEEE_802_3_Ethernet as CRC32_IEEE_802_3_Ethernet
+/** Test vectors for CRC8 H2F [AUTOSAR Section 7.2.3.1] */
+property CRC32_IEEE_802_3_EthernetPassesTests =
+    CRC32_IEEE_802_3_Ethernet::CRC 0x00000000           == 0x2144DF1C
+ /\ CRC32_IEEE_802_3_Ethernet::CRC 0xF20183             == 0x24AB9D77
+ /\ CRC32_IEEE_802_3_Ethernet::CRC 0x0FAA0055           == 0xB6C9B287
+ /\ CRC32_IEEE_802_3_Ethernet::CRC 0x00FF5511           == 0x32A06212
+ /\ CRC32_IEEE_802_3_Ethernet::CRC 0x332255AABBCCDDEEFF == 0xB0AE863D
+ /\ CRC32_IEEE_802_3_Ethernet::CRC 0x926B55             == 0x9CDEA29B
+ /\ CRC32_IEEE_802_3_Ethernet::CRC 0xFFFFFFFF           == 0xFFFFFFFF
+
+import shared::CRC::CRC32_P4 as CRC32_P4
+/** Test vectors for CRC8 H2F [AUTOSAR Section 7.2.3.2] */
+property CRC32_P4PassesTests =
+    CRC32_P4::CRC 0x00000000           == 0x6FB32240
+ /\ CRC32_P4::CRC 0xF20183             == 0x4F721A25
+ /\ CRC32_P4::CRC 0x0FAA0055           == 0x20662DF8
+ /\ CRC32_P4::CRC 0x00FF5511           == 0x9BD7996E
+ /\ CRC32_P4::CRC 0x332255AABBCCDDEEFF == 0xA65A343D
+ /\ CRC32_P4::CRC 0x926B55             == 0xEE688A78
+ /\ CRC32_P4::CRC 0xFFFFFFFF           == 0xFFFFFFFF
+
+import shared::CRC::CRC64_ECMA as CRC64_ECMA
+/** Test vectors for CRC8 H2F [AUTOSAR Section 7.2.4.1] */
+property CRC64_ECMAPassesTests =
+    CRC64_ECMA::CRC 0x00000000           == 0xF4A586351E1B9F4B
+ /\ CRC64_ECMA::CRC 0xF20183             == 0x319C27668164F1C6
+ /\ CRC64_ECMA::CRC 0x0FAA0055           == 0x54C5D0F7667C1575
+ /\ CRC64_ECMA::CRC 0x00FF5511           == 0xA63822BE7E0704E6
+ /\ CRC64_ECMA::CRC 0x332255AABBCCDDEEFF == 0x701ECEB219A8E5D5
+ /\ CRC64_ECMA::CRC 0x926B55             == 0x5FAA96A9B59F3E4E
+ /\ CRC64_ECMA::CRC 0xFFFFFFFF           == 0xFFFFFFFF00000000

@@ -1,0 +1,116 @@
+/*
+ * Description: This module provides KECCAK Message Authentication
+ * Code (KMAC) functions [NIST-SP-800-185 Section 4].
+ */
+
+module algorithms::KMAC::Main where
+
+import algorithms::Keccak::derived (bytepad, encode_string, right_encode)
+import algorithms::Keccak::Main (bitReordering)
+import algorithms::cSHAKE::Main (cSHAKE128, cSHAKE256)
+
+/**
+ * The KECCAK Message Authentication Code (KMAC128) algorithm is a PRF
+ * and keyed hash function based on Keccak. It provides
+ * variable-length output, and unlike `SHAKE128` and `cSHAKE128`,
+ * altering the requested output length generates a new, unrelated
+ * output [NIST-SP-800-185 Section 4.3].
+ *
+ * Inputs:
+ *   `K`: A key bit string of any length, including zero.
+ *   `X`: The main input bit string. It may be of any length, including zero.
+ *   `S`: A customization bit string of any length, including zero. If
+ *        no customization is desired, set `S` to the empty string.
+ *
+ * Notable types:
+ *   `L`: An integer representing the requested output length in
+ *        bits.
+ */
+KMAC128 :
+    { L, k, a, s }
+    ( L < 2 ^^ 2040, k < 2 ^^ 2040, fin a, s < 2 ^^ 2040)
+ => [k] -> [a] -> [s] -> [L]
+KMAC128 K X S =
+    cSHAKE128`{L} newX (join "KMAC") S
+  where
+    K'   = bitReordering K
+    X'   = bitReordering X
+    newX = bitReordering (bytepad`{168} (encode_string K') # X' # right_encode`{L})
+
+/**
+ * The KECCAK Message Authentication Code (KMAC256) algorithm is a PRF
+ * and keyed hash function based on Keccak. It provides
+ * variable-length output, and unlike `SHAKE256` and `cSHAKE256`,
+ * altering the requested output length generates a new, unrelated
+ * output [NIST-SP-800-185 Section 4.3].
+ *
+ * Inputs:
+ *   `K`: A key bit string of any length, including zero.
+ *   `X`: The main input bit string. It may be of any length, including zero.
+ *   `S`: A customization bit string of any length, including zero. If
+ *        no customization is desired, set `S` to the empty string.
+ *
+ * Notable types:
+ *   `L`: An integer representing the requested output length in
+ *        bits.
+ */
+KMAC256 :
+    { L, k, a, s }
+    ( L < 2 ^^ 2040, k < 2 ^^ 2040, fin a, s < 2 ^^ 2040)
+ => [k] -> [a] -> [s] -> [L]
+KMAC256 K X S =
+    cSHAKE256`{L} newX (join "KMAC") S
+  where
+    K'   = bitReordering K
+    X'   = bitReordering X
+    newX = bitReordering (bytepad`{136} (encode_string K') # X' # right_encode`{L})
+
+/**
+ * This is a variant of KMAC128 as an XOF [NIST-SP-800-185 Section
+ * 4.3.1].
+ *
+ * Inputs:
+ *   `K`: A key bit string of any length, including zero.
+ *   `X`: The main input bit string. It may be of any length, including zero.
+ *   `S`: A customization bit string of any length, including zero. If
+ *        no customization is desired, set `S` to the empty string.
+ *
+ * Notable types:
+ *   `L`: An integer representing the requested output length in
+ *        bits.
+ */
+KMACXOF128 :
+    { L, k, a, s }
+    ( k < 2 ^^ 2040, fin a, s < 2 ^^ 2040)
+ => [k] -> [a] -> [s] -> [L]
+KMACXOF128 K X S =
+    cSHAKE128`{L} newX (join "KMAC") S
+  where
+    K'   = bitReordering K
+    X'   = bitReordering X
+    newX = bitReordering (bytepad`{168} (encode_string K') # X' # right_encode`{0})
+
+/**
+ * This is a variant of KMAC256 as an XOF [NIST-SP-800-185 Section
+ * 4.3.1].
+ *
+ * Inputs:
+ *   `K`: A key bit string of any length, including zero.
+ *   `X`: The main input bit string. It may be of any length, including zero.
+ *   `S`: A customization bit string of any length, including zero. If
+ *        no customization is desired, set `S` to the empty string.
+ *
+ * Notable types:
+ *   `L`: An integer representing the requested output length in
+ *        bits.
+ */
+KMACXOF256 :
+    { L, k, a, s }
+    ( k < 2 ^^ 2040, fin a, s < 2 ^^ 2040)
+ => [k] -> [a] -> [s] -> [L]
+KMACXOF256 K X S =
+    cSHAKE256`{L} newX (join "KMAC") S
+  where
+    K'   = bitReordering K
+    X'   = bitReordering X
+    newX = bitReordering (bytepad`{136} (encode_string K') # X' # right_encode`{0})

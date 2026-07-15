@@ -1,0 +1,44 @@
+/*
+ * Description: This module provides some helper functions for working
+ * with Cryptol's built-in enumerated types.
+ */
+
+module shared::common::utils::Enum where
+
+/**
+ * Returns the `Ok` case of a 'Result' enum or immediately throws an
+ * error, halting execution. Safe use of this function (in context)
+ * should be proven with `:safe`.
+ */
+unwrap : {r, e} Result r e -> r
+unwrap x =
+    case x of
+      Ok  r -> r
+      Err e -> trace "Error:" e (error "unwrap failed")
+
+/** Same as `unwrap` */
+fromOk : {r, e} Result r e -> r
+fromOk = unwrap
+
+/**
+ * An approximation of Haskell's bind operator. This can assist with
+ * performing operations on `Result` enums.
+ */
+(>>=): {a, b, e} Result a e -> (a -> Result b e) -> Result b e
+r >>= f =
+    case r of
+      Ok a  -> f a
+      Err e -> Err e
+
+/**
+ * This test demonstrates the use of `unwrap` and `>>=`.
+ */
+bindExample: Bool
+property bindExample = unwrap r == 7 + 13
+  where
+    r = int2byte 7  >>= \a ->
+        int2byte 13 >>= \b ->
+        Ok (a + b)
+    int2byte: Integer -> Result [8] (String 15)
+    int2byte x =
+        if x >= 0 /\ x < 256 then Ok (fromInteger x) else Err ("int2byte failed")

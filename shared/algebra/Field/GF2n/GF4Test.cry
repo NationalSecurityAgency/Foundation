@@ -1,0 +1,92 @@
+/*
+ * Description: This module demonstrates how to use the
+ * `shared::algebra::Field::GF2n` module to construct GF(2^n) for n =
+ * 2.
+ */
+
+module shared::algebra::Field::GF2n::GF4Test where
+
+// Import and instantiate a Field for GF2^n elements.
+
+import shared::algebra::Field::GF2n as GF2n
+  where
+    type n = 2
+    p = 0b111
+
+// Import Field arithmetic, scalar, vector, and matrix operators for
+// elements in `GF2n`.
+
+import submodule GF2n::Arithmetic
+import submodule GF2n::Scalar
+import submodule GF2n::Vector
+import submodule GF2n::Matrix 
+
+/**
+ * The following properties check a few scalar operation examples.
+ * 
+ * ```
+ * :check nontrivial_add_checks
+ * :check nontrivial_mul_checks
+ * ```
+ */
+property nontrivial_add_checks = and [ 0b01 .+ 0b10 == 0b11
+                                     , 0b01 .+ 0b11 == 0b10
+                                     , 0b10 .+ 0b11 == 0b01
+                                     ]
+property nontrivial_mul_checks = and [ 0b11 .* 0b10 == 0b01
+                                     , 0b10 .* 0b10 == 0b11
+                                     , 0b11 .* 0b11 == 0b10
+                                     ]
+
+/**
+ * The following properties test a few identities for GF(4).
+ *
+ * ```
+ * :prove additiveInverses
+ * :prove fermat
+ * ```
+ */
+property additiveInverses x = x .+ x == zro
+property fermat x           = exp x 4 == x
+
+/**
+ * The following properties test a few vector arithmetic examples.
+ *
+ * ```
+ * :check vector_addition_check
+ * :check vector_dotproduct_check
+ * ```
+ */
+xs = [ 0b11, 0b10 ]
+ys = [ 0b10, 0b01 ]
+property vector_addition_check   = xs |+ ys == [ 0b01, 0b11]
+property vector_dotproduct_check = xs |* ys == 0b11
+
+/**
+ * The following property tests a vector arithmetic property of GF(4).
+ * 
+ * ```
+ * :prove add_minus_property`{n=5}
+ * ```
+ */
+add_minus_property : {n} (fin n) => Vector n -> Vector n -> Bool
+property add_minus_property x y = x |+ y == x |- y
+
+/**
+ * The following property tests an example of matrix multiplication
+ * over GF(4).
+ * 
+ * ```
+ * :check matrix_mul_check
+ * ```
+ */
+xss = [ [ 0b11, 0b10 ]
+      , [ 0b01, 0b11 ]
+      ]
+yss = [ [ 0b10, 0b11 ]
+      , [ 0b01, 0b00 ]
+      ]
+zss = [ [ 0b11, 0b10 ]
+      , [ 0b01, 0b11 ]
+      ]
+property matrix_mul_check = xss #* yss == zss

@@ -1,0 +1,52 @@
+/*
+ * Description: This module provides field operators for a *field
+ * extension* `GF(2)[x]/p`, where `p` is an *irreducible polynomial* of
+ * *degree* `n`.
+ *
+ * Irreducibility can be checked using `is_irreducible` from
+ * `shared::algebra::Polynomial::GF2`. A *reducible* polynomial could
+ * still be used to form the *quotient ring* `GF(2)[x]/p`, which would
+ * not be a field and thus lack fully defined reciprocation and
+ * division operators for nonzero polynomials.
+ */
+
+module shared::algebra::Field::GF2n::Functor where
+
+import interface shared::algebra::Field::GF2n::Interface
+
+type FieldElement = [n]
+
+mem : FieldElement -> Bool
+mem _ = True
+
+add : FieldElement -> FieldElement -> FieldElement
+add p1 p2 = zipWith (^) p1 p2
+
+zro : FieldElement
+zro = <| 0 |>
+
+neg : FieldElement -> FieldElement
+neg x = x
+
+mul : FieldElement -> FieldElement -> FieldElement
+mul p1 p2 = pmod (pmult p1 p2) p
+
+one : FieldElement
+one = <| 1 |>
+
+rec : FieldElement -> FieldElement
+rec x = exp x (2^^`n - 2)
+
+div : FieldElement -> FieldElement -> FieldElement
+div x y = mul x (rec y)
+
+exp : {e} (Cmp e, Integral e, Literal 1 e) => FieldElement -> e -> FieldElement
+exp x k = if k < 0 then error "negative exponent" else pow k
+  where
+    sq y  = mul y y
+    odd y = y % fromInteger 2 == 1
+    pow i = if i == 0 then one
+             | i == 1 then x
+             | odd i  then mul x i'
+            else i'
+        where i' = sq (pow (i / fromInteger 2))

@@ -1,0 +1,65 @@
+/*
+ * Description: This is a Cryptol specification for a keyed-Hash
+ * Message Authentication Code (HMAC), a mechanism for message
+ * authentication using an Approved Cryptographic Hash Function (ACHF)
+ * [FIPS-PUB-198-1 Section 2.3].
+ */
+
+module algorithms::HMAC::Main where 
+
+/*
+ * `HMAC` and `HMAC_init` use the following types [FIPS-PUB-198-1
+ * Section 2.3]:
+ * `λ` : The number of (leftmost) bits of the output used
+ *       [FIPS-PUB-198-1 Section 5].
+ * `B` : Block size (in bytes) of the input of the ACHF.
+ * `k` : Length of `K` in bytes.
+ * `n` : Length of `text` in bits, where `0 <= n < 2^^B - 8*B`.
+ * `L` : Block size (in bytes) of the output of the ACHF.
+ */
+
+/**
+ * This defines the HMAC message authentication function using the
+ * ACHF `Hk`, `Hn`, and `HL`. Each ACHF is technically the same but
+ * defined with a different input size.
+ */
+HMAC : 
+    { λ, B, k, n, L}
+    ( λ <= L * 8
+    , fin B, 2 ^^ B >= 8 * B
+    , fin k
+    , fin n, n < 2 ^^ B - 8 * B
+    , L <= B
+    )
+ => ([k * 8]       -> [L * 8])
+ -> ([B * 8 + n]   -> [L * 8])
+ -> ([(B + L) * 8] -> [L * 8])
+ -> [k][8]
+ -> [n]
+ -> [λ]
+HMAC Hk Hn HL K text = 
+    take (HL ((K0 ^ opad) # (Hn ((K0 ^ ipad) # text))))
+  where
+    K0   : [B * 8]                 // `K` after preprocessing to form
+                                   // a `B`-byte key.
+    K0   = HMAC_init Hk K
+    opad = join (repeat`{B} 0x5C)  // [FIPS-PUB-198-1 Section 2.3]
+    ipad = join (repeat`{B} 0x36)  // [FIPS-PUB-198-1 Section 2.3]
+
+private
+
+  /**
+   * This function initializes the HMAC key `K` by performing step 1-3
+   * of [FIPS-PUB-198-1 Section 4 Table 1]. Step 2 implicitly requires
+   * `L <= B`.
+   */
+  HMAC_init :
+      { B, k, L }
+      ( fin B, fin k, L <= B )
+   => ([k * 8] -> [L * 8])
+   -> [k][8]
+   -> [B * 8]
+  HMAC_init Hk K
+    | k == B => join K
+    | k >  B => Hk (join K) # (zero : [(B - L) * 8])
+    | k <  B => join K      # (zero : [(B - k) * 8])

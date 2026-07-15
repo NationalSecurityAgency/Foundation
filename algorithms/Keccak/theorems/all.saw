@@ -1,0 +1,38 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `algorithms/Keccak`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+include "Main.saw";
+let Main_main = main;
+
+include "derived.saw";
+let derived_main = main;
+
+include "StateConversions.saw";
+let StateConversions_main = main;
+
+/*
+ * Script to run on command line:
+ *   `saw all.saw`
+ * Return:
+ *   `TopLevel [Theorem]` verifying all lemmas used throughout `algorithms/Keccak`.
+ */
+let main : TopLevel [Theorem] = do {
+  Main_lemmas             <- Main_main;
+  derived_lemmas          <- derived_main;
+  StateConversions_lemmas <- StateConversions_main;
+
+  summarize_verification;
+
+  return
+    (foldl concat []
+      [ Main_lemmas
+      , derived_lemmas
+      , StateConversions_lemmas
+      ]
+    );
+};

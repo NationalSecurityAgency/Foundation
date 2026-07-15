@@ -1,0 +1,34 @@
+/*
+ * Description: This module provides a set of primitive `Ring`
+ * operators.
+ */
+
+module shared::algebra::Ring::Primitive::Functor where
+
+import interface shared::algebra::Ring::Primitive::Interface as I
+
+type RingElement = I::RingElement
+
+mem : RingElement -> Bool 
+mem _ = True
+
+add : RingElement -> RingElement -> RingElement
+add = (+)
+
+zro : RingElement
+zro = fromInteger 0
+
+neg : RingElement -> RingElement
+neg = negate
+
+mul : RingElement -> RingElement -> RingElement
+mul = (*)
+
+one : RingElement
+one = fromInteger 1
+
+exp :
+    {e}
+    (Cmp e, Integral e, Literal 1 e)
+ => RingElement -> e -> RingElement
+exp x k = x ^^ k

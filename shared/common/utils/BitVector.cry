@@ -1,0 +1,20 @@
+/*
+ * Description: This module contains utility functions related
+ * to sequences of type `Bit`.
+ */
+
+module shared::common::utils::BitVector where
+
+/**
+ * `parity` computes the parity of the input.
+ */
+parity : {a, b} (fin a, Logic b) => [a]b -> b
+parity xs = foldl (^) zero xs
+
+/**
+ * `popcount` computes the popcount of the input.
+ */
+popcount : {a, b} (fin a, Ring b, Literal 1 b) => [a] -> b
+popcount xs = last acc
+  where
+    acc = [0] # [ if xi then a + 1 else a | xi <- xs | a <- acc ]

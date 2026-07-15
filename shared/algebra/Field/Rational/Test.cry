@@ -1,0 +1,23 @@
+/* 
+ * Description: This module demonstrates how to use the `Rational`
+ * Field.
+ */
+
+module shared::algebra::Field::Rational::Test where
+
+// Import and instantiate a Field for rational elements.
+import shared::algebra::Field::Rational as Rational
+
+// Import Field arithmetic and scalar operators for rational elements.
+import submodule Rational::Arithmetic
+import submodule Rational::Scalar
+
+property mem_test = mem (ratio (-5) 6)
+
+property add_test = ratio (-5) 6 .+ ratio 2 9 == ratio (-11) 18
+property zro_test = zro == ratio 0 1
+property neg_test = neg (ratio (-5) 6) == ratio 5 6
+
+property mul_test = ratio 5 6 .* ratio 2 9 == ratio 5 27
+property one_test = one == ratio 1 1
+property rec_test = rec (ratio (-5) 6) == ratio (-6) 5

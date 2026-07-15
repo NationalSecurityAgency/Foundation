@@ -1,0 +1,23 @@
+/*
+ * Description: This module provides a `Ring` for bit vectors.
+ */
+
+module shared::algebra::Ring::BitVector where
+
+parameter
+  /** number of bits */
+  type n : #
+  type constraint fin n
+
+/** `Arithmetic` instance for `[n]` */
+submodule Arithmetic = shared::algebra::Ring::Primitive::Functor where
+  type RingElement = [n]
+
+/** Scalar operators for `[n]` */
+submodule Scalar = shared::algebra::Ring::Operators::Scalar { submodule Arithmetic }
+
+/** Vector operators for `[n]` */
+submodule Vector = shared::algebra::Ring::Operators::Vector { submodule Arithmetic }
+
+/** Matrix operators for `[n]` */
+submodule Matrix = shared::algebra::Ring::Operators::Matrix { submodule Arithmetic }

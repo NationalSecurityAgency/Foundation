@@ -1,0 +1,18 @@
+/*
+ * Description: This module provides a `Ring` for integers.
+ */
+
+module shared::algebra::Ring::Integer where
+
+/** `Arithmetic` instance for `Integer` */
+submodule Arithmetic = shared::algebra::Ring::Primitive::Functor where
+  type RingElement = Integer
+
+/** Scalar operators for `Integer` */
+submodule Scalar = shared::algebra::Ring::Operators::Scalar { submodule Arithmetic }
+
+/** Vector operators for `Integer` */
+submodule Vector = shared::algebra::Ring::Operators::Vector { submodule Arithmetic }
+
+/** Matrix operators for `Integer` */
+submodule Matrix = shared::algebra::Ring::Operators::Matrix { submodule Arithmetic }

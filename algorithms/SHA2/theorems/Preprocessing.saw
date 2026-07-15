@@ -1,0 +1,28 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `algorithms/SHA2/Preprocessing.cry`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+// Import the Cryptol specification for SHA-2's preprocessing functions.
+import "../Preprocessing.cry";
+
+let verify_padTest512 : TopLevel Theorem =
+    proveit {{ padTest512 }} rme;
+
+let verify_padTest1024 : TopLevel Theorem =
+    proveit {{ padTest1024 }} rme;
+
+/*
+ * Verify public properties of `algorithms::SHA2::Preprocessing`.
+ */
+let main : TopLevel [Theorem] = do {
+  padTest512_lemma <- verify_padTest512;
+  padTest1024_lemma <- verify_padTest1024;
+
+  summarize_verification;
+
+  return [padTest512_lemma, padTest1024_lemma];
+};

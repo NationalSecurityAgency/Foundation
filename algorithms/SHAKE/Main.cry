@@ -1,0 +1,89 @@
+/*
+ * Description: This module provides a Cryptol specification for the
+ * SHA3 Extendable Output Functions SHAKE and RawSHAKE described in
+ * [FIPS-PUB-202 Sections 6.2 and 6.3].
+ */
+
+module algorithms::SHAKE::Main where
+
+import algorithms::Keccak::Main (Keccak, bitReordering)
+
+/**
+ * The SHA3 Extendable Output Function SHAKE128 [FIPS-PUB-202 Section
+ * 6.2].
+ */ 
+SHAKE128 : {DigestSize, a} (fin a) => [a] -> [DigestSize]
+SHAKE128 M = bitReordering R
+  where
+    M' = bitReordering M
+    R  = Keccak`{256, DigestSize} (M' # 0b1111)
+
+/**
+ * The SHA3 Extendable Output Function SHAKE256 [FIPS-PUB-202 Section
+ * 6.2].
+ */ 
+SHAKE256 : {DigestSize, a} (fin a) => [a] -> [DigestSize]
+SHAKE256 M = bitReordering R
+  where
+    M' = bitReordering M
+    R  = Keccak`{512, DigestSize} (M' # 0b1111)
+
+/**
+ * The SHA3 Extendable Output Function RawSHAKE128 [FIPS-PUB-202
+ * Section 6.3].
+ */
+RawSHAKE128 : {DigestSize, a} (fin a) => [a] -> [DigestSize]
+RawSHAKE128 J = bitReordering R
+  where
+    J' = bitReordering J
+    R  = Keccak`{256, DigestSize} (J' # 0b11)
+
+/**
+ * The SHA3 Extendable Output Function SHAKE256 [FIPS-PUB-202 Section
+ * 6.3].
+ */ 
+RawSHAKE256 : {DigestSize, a} (fin a) => [a] -> [DigestSize]
+RawSHAKE256 J = bitReordering R
+  where
+    J' = bitReordering J
+    R  = Keccak`{512, DigestSize} (J' # 0b11)
+
+private
+
+/**
+ * An alternate definition of SHAKE128 [FIPS-PUB-202 Section 6.3].
+ */ 
+SHAKE128' : {DigestSize, a} (fin a) => [a] -> [DigestSize]
+SHAKE128' M = RawSHAKE128 (M' # 0b11)
+  where M' = bitReordering M
+
+/**
+ * This property demonstrates that `SHAKE128` can be defined using
+ * `RawSHAKE128`.
+ *
+ * ```
+ * :exhaust SHAKE128Equivalence`{10, 5}
+ * ```
+ */
+SHAKE128Equivalence : {DigestSize, a} (fin DigestSize, fin a) => [a] -> Bool
+property SHAKE128Equivalence =
+    SHAKE128`{DigestSize} === SHAKE128'`{DigestSize}
+
+/**
+ * An alternate definition of SHAKE256 [FIPS-PUB-202 Section 6.3].
+ */ 
+SHAKE256' : {DigestSize, a} (fin a) => [a] -> [DigestSize]
+SHAKE256' M = RawSHAKE256 (M' # 0b11)
+  where M' = bitReordering M
+
+/**
+ * This property demonstrates that `SHAKE256` can be defined using
+ * `RawSHAKE256`.
+ *
+ * ```
+ * :exhaust SHAKE256Equivalence`{10, 5}
+ * ```
+ */
+SHAKE256Equivalence : {DigestSize, a} (fin DigestSize, fin a) => [a] -> Bool
+property SHAKE256Equivalence =
+    SHAKE256`{DigestSize} === SHAKE256'`{DigestSize}

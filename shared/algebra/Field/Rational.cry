@@ -1,0 +1,18 @@
+/*
+ * Description: This module proivdes a Field for the rationals.
+ */
+
+module shared::algebra::Field::Rational where
+
+/** `Arithmetic` instances for `Rational` */
+submodule Arithmetic = shared::algebra::Field::Primitive::Functor where
+  type FieldElement = Rational 
+
+/** Scalar operators for `Rational` */
+submodule Scalar = shared::algebra::Field::Operators::Scalar { submodule Arithmetic }
+
+/** Vector operators for `Rational` */
+submodule Vector = shared::algebra::Field::Operators::Vector { submodule Arithmetic }
+
+/** Matrix operators for `Rational` */
+submodule Matrix = shared::algebra::Field::Operators::Matrix { submodule Arithmetic }

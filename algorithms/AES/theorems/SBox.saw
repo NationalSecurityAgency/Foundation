@@ -1,0 +1,24 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `algorithms/AES/SBox.cry`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+// Import the Cryptol specification for AES's `SBox`es.
+import "../SBox.cry";
+
+let verify_SBoxInverts : TopLevel Theorem =
+    proveit {{ SBoxInverts }} rme;
+
+/*
+ * Verify public properties of `algorithms::AES::SBox`.
+ */
+let main : TopLevel [Theorem] = do {
+  SBoxInverts_lemma <- verify_SBoxInverts;
+
+  summarize_verification;
+
+  return [SBoxInverts_lemma];
+};

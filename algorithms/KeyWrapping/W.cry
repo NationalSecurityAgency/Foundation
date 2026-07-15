@@ -1,0 +1,162 @@
+/*
+ * Description: This is a Cryptol specification for the W, W', and
+ * other miscellaneous building blocks [NIST-800-38F].
+ */
+module algorithms::KeyWrapping::W where
+
+parameter
+  type semiblock : #
+  type constraint (fin semiblock, semiblock % 8 == 0)
+
+// [NIST-800-38F Section 4.4] Operations and Functions
+
+/**
+ * The integer for which the bit string X is the binary
+ * representation.
+ */
+int X = toInteger X
+
+/**
+ * The bit length of bit string X.
+ */
+len X = length X
+
+/**
+ * The bit string consisting of the s right-most bits of the bit
+ * string X.
+ */
+LSB : {s, a} (fin s, fin a, a >= s) => [a] -> [s]
+LSB X = drop X
+
+/**
+ * The bit string consisting of the s left-most bits of the bit
+ * string X.
+ */
+MSB : {s, a} (fin s, a >= s) => [a] -> [s]
+MSB X = take X
+
+// [NIST-800-38F Section 6.1] W and W'
+
+/**
+ * This method specifies the wrapping function, W (Algorithm 1), for KW
+ * and KWP, using the same KEK and designated cipher function.
+ */
+W : { n }
+    ( fin n, 3 <= n )
+ => ([2 * semiblock] -> [2 * semiblock]) -> [n * semiblock] -> [n * semiblock]
+W CIPHk S = join C
+  where
+    type s = 6 * (n - 1)
+    S'     = split`{n} S
+    C      = foldl (WStep2 CIPHk) S' [ 1 .. s ]
+
+/**
+ * This method performs a single iteration of Step 2 of W (Algorithm
+ * 1).
+ */
+WStep2 :
+    { n }
+    ( fin n, 3 <= n )
+ => ([2 * semiblock] -> [2 * semiblock]) -> [n][semiblock] -> Integer -> [n][semiblock]
+WStep2 CIPHk ([A, R2] # Rs) t = [A'] # Rs # [Rn]
+  where
+    A' = MSB (CIPHk (A # R2)) ^ (fromInteger t)
+    Rn = LSB (CIPHk (A # R2))
+
+/**
+ * This method specifies the unwrapping function, W' (Algorithm 2),
+ * for KW and KWP, with a given block cipher and KEK.
+ */
+W' :
+    { n }
+    ( fin n, 3 <= n )
+ => ([2 * semiblock] -> [2 * semiblock]) -> [n * semiblock] -> [n * semiblock]
+W' CIPHk' C = join S
+  where
+    type s = 6 * (n - 1)
+    C'     = split`{n} C
+    S      = foldl (WStep2' CIPHk') C' [ s, s - 1 .. 1 ]
+
+/**
+ * This method performs a single iteration of Step 2 of W' (Algorithm
+ * 2).
+ */
+WStep2' :
+    { n }
+    ( fin n, 3 <= n)
+ => ([2 * semiblock] -> [2 * semiblock]) -> [n][semiblock] -> Integer -> [n][semiblock]
+WStep2' CIPHk' ([A'] # Rs # [Rn]) t = [A, R2] # Rs
+  where
+    A  = MSB (CIPHk' ((A' ^ (fromInteger t)) # Rn))
+    R2 = LSB (CIPHk' ((A' ^ (fromInteger t)) # Rn))
+
+/**
+ * This property demonstrates that `WStep2` and `WStep2'` are
+ * inverses.
+ *
+ * ```
+ * :s prover=w4-yices
+ * :prove \(Rs : [3][_])   t -> WStep2sInvert (\x -> x + 1) (\x -> x - 1) Rs t
+ * :prove \(Rs : [4][_])   t -> WStep2sInvert (\x -> x + 1) (\x -> x - 1) Rs t
+ * :prove \(Rs : [100][_]) t -> WStep2sInvert (\x -> x + 1) (\x -> x - 1) Rs t
+ * ```
+ */
+WStep2sInvert :
+    { n }
+    ( fin n, 3 <= n )
+ => ([2 * semiblock] -> [2 * semiblock])  // CIPHk
+ -> ([2 * semiblock] -> [2 * semiblock])  // CIPHk'
+ -> [n][semiblock]                        // Rs
+ -> Integer                               // t
+ -> Bool
+property WStep2sInvert CIPHk CIPHk' Rs t =
+    WStep2' CIPHk' (WStep2 CIPHk Rs t) t == Rs
+
+/**
+ * This property demonstrates that `W` and `W'` are
+ * inverses.
+ *
+ * ```
+ * :s prover=w4-yices
+ * :prove \(S : [3 * semiblock]) -> WsInvert (\x -> x + 1) (\x -> x - 1) S
+ * ```
+ */
+WsInvert :
+    { n }
+    ( fin n, 3 <= n )
+ => ([2 * semiblock] -> [2 * semiblock])  // CIPHk
+ -> ([2 * semiblock] -> [2 * semiblock])  // CIPHk'
+ -> [n * semiblock]                       // Rs
+ -> Bool
+property WsInvert CIPHk CIPHk' S =
+    W'`{n} CIPHk' (W`{n} CIPHk S) == S
+
+// [NIST-800-38F Section 4.5] Examples of Basic Operations and
+// Functions on Strings.
+
+hexadecimalProp : Bool
+property hexadecimalProp = 0xA659 == 0b1010011001011001
+
+zeroBitsProp : Bool
+property zeroBitsProp = (0 : [8]) == 0b00000000
+
+concatenationProp : Bool
+property concatenationProp = 0b001 # 0b10111 == 0b00110111
+
+XORProp : Bool
+property XORProp = 0b10011 ^ 0b10101 == 0b00110
+
+lenProp : Bool
+property lenProp = len 0b00010 == (5 : Integer)
+
+LSBProp : Bool
+property LSBProp = LSB`{3} 0b111011010 == 0b010
+
+MSBProp : Bool
+property MSBProp = MSB`{4} 0b111011010 == 0b1110
+
+bitstringProp : Bool
+property bitstringProp = fromInteger 39 == 0b00100111
+
+intProp : Bool
+property intProp = int 0b00011010 == 26

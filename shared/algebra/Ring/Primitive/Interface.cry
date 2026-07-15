@@ -1,0 +1,11 @@
+/* 
+ * Description: This module provides an interface for primitive Ring
+ * elements that all make use of the same set of primitive operators
+ * defined in `shared::algebra::Ring::Primitive::Functor`.
+ */
+
+interface module shared::algebra::Ring::Primitive::Interface where
+
+/** arbitrary primitive ring type */
+type RingElement : *
+type constraint Ring RingElement

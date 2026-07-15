@@ -1,0 +1,15 @@
+/*
+ * Description: This is a Cryptol specification for the KWAE and KWAD
+ * functions [NIST-800-38F], specialized to AES-256.
+ */
+module algorithms::KeyWrapping::AES256 where
+
+import algorithms::KeyWrapping::KW as KW
+import algorithms::KeyWrapping::KWP as KWP
+import algorithms::AES::Main (AES256)
+
+KWAE KEK = KW::KWAE (AES256.Encrypt KEK)
+KWAD KEK = KW::KWAD (AES256.Decrypt KEK)
+
+KWPAE KEK = KWP::KWPAE (AES256.Encrypt KEK)
+KWPAD KEK = KWP::KWPAD (AES256.Decrypt KEK)

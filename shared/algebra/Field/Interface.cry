@@ -1,0 +1,76 @@
+/*
+ * Description: This module provides an interface for a Field type. a
+ * field is parameterized by a suite of additive and multiplicative
+ * operations on an element type. Division and exponentiation are also 
+ * supplied as parameters so that performant implementations can be 
+ * used.
+ */
+
+interface module shared::algebra::Field::Interface where
+
+  /** element type */
+  type FieldElement : *
+
+  /** membership predicate */
+  mem : FieldElement -> Bool
+
+  /** additive operation */
+  add : FieldElement -> FieldElement -> FieldElement
+  /** additive identity */
+  zro : FieldElement
+  /** additive inverse */
+  neg : FieldElement -> FieldElement
+
+  /** multiplicative operation */
+  mul : FieldElement -> FieldElement -> FieldElement
+  /** multiplicative identity */
+  one : FieldElement
+  /** multiplicative inverse */
+  rec : FieldElement -> FieldElement
+
+  /**
+   * division - provided here to allow a peformant division operation
+   * to be supplied (such as Cryptol's built in `./`). Otherwise,
+   * `div x y = mul x (rec y)` should suffice.
+   */
+  div : FieldElement -> FieldElement -> FieldElement
+
+  /**
+   * exponentiation - provided here to allow a performant
+   * exponentiation operation to be supplied (such as Cryptol's
+   * built-in `^^`). If a performant operation is not available,
+   * exponentiation can be implemented using the following definition:
+   *
+   * ```cryptol
+   * exp :
+   *     {e}
+   *     (Cmp e, Integral e, Literal 1 e)
+   *  => FieldElement -> e -> FieldElement
+   * exp x k =
+   *     if k < 0  then error "negative exponent"
+   *      | k == 0 then one
+   *     else           mul x (exp x (k - 1))
+   * ```
+   * 
+   * Or, using Montgomery multiplication, implemented as:
+   *
+   * ```cryptol
+   * exp :
+   *     {e}
+   *     (Cmp e, Integral e, Literal 1 e)
+   *  => FieldElement -> e -> FieldElement
+   * exp x k = if k < 0 then error "negative exponent" else pow k
+   *   where
+   *     sq y  = mul y y
+   *     odd y = y % fromInteger 2 == 1
+   *     pow i = if i == 0 then one
+   *              | i == 1 then x
+   *              | odd i  then mul x i'
+   *             else i'
+   *       where i' = sq (pow (i / fromInteger 2))
+   * ```
+   */
+  exp :
+      {e}
+      (Cmp e, Integral e, Literal 1 e)
+   => FieldElement -> e -> FieldElement

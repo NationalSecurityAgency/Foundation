@@ -1,0 +1,88 @@
+/*
+ * Description: This module specifies the Secure Hash Algorithm 2
+ * (SHA-2) [FIPS-PUB-180-4 Sections 6.2 and 6.4].
+ */
+module algorithms::SHA2::Main where
+
+import algorithms::SHA2::Notation (ROTR, SHR)
+import algorithms::SHA2::Preprocessing (parse, pad)
+import algorithms::SHA2::Functions (Ch, Parity, Maj)
+
+parameter
+
+  /**
+   * Number of bits in a message digest.
+   */
+  type d : #
+  type constraint (fin d, d > 0)
+
+  /**
+   * Number of bits in a word [FIPS-PUB-180-4 Section 2.2.1].
+   */
+  type w : #
+  type constraint (fin w, w > 0, 8 * w >= d)
+
+  /**
+   * Number of elements of `K` (and `W`) [FIPS-PUB-180-4 Sections
+   * 4.2.2 and 4.2.3]. Should be `64` when `w = 32` and `80` when `w =
+   * 64`.
+   */
+  type Klen : #
+  type constraint (fin Klen)
+
+  /** SHA-2 constants. */
+  K  : [Klen][w]
+
+  /** Initial hash value [FIPS-PUB-180-4 Section 5.3]. */
+  H0 : [8][w]
+
+  /* SHA-2 variant specific functions [FIPS-PUB-180-4 Section 4.1]. */
+  SIGMA_0 : [w] -> [w]
+  SIGMA_1 : [w] -> [w]
+  sigma_0 : [w] -> [w]
+  sigma_1 : [w] -> [w]
+
+/**
+ * Number of bits in a message block [FIPS-PUB-180-4 Section 2.2.1].
+ */
+type m = w * 16
+
+/**
+ * "SHA-2 may be used to hash a message, M, having a length of `l`
+ * bits, where `0 <= l < 2^^(2 * w)`...The final result of SHA-2 is a
+ * `d`-bit message digest [FIPS-PUB-180-4 Sections 6.2 and 6.4]."
+ */
+hash : {l} (width l <= 2 * w) => [l] -> [d]
+hash M = take (join H)
+  where
+    type k = (l + 1 + 2 * w) %^ m  // [FIPS-PUB-180-4 Section 5.1.1]
+    type N = (l + 1 + 2 * w) /^ m  // [FIPS-PUB-180-4 Section 5.2.1]
+    M' = parse`{w, N} (pad`{m, w, l, k} M)
+    H = foldl step H0 M'
+
+/**
+ * Inner loop of SHA-2 that processes a single message block `M`
+ * [FIPS-PUB-180-4 Sections 6.2.2 and 6.4.2].
+ */
+step : [8][w] -> [16][w] -> [8][w]
+step H M = H + H'  // Step 4 [FIPS-PUB-180-4 Sections 6.2.2 and 6.4.2].
+  where
+    W : [Klen][w]  // Step 1 [FIPS-PUB-180-4 Sections 6.2.2 and 6.4.2].
+    W@t = if t <= 15 then M @ t
+          else            sigma_1 (W@(t-2)) + W@(t-7) + sigma_0 (W@(t-15)) + W@(t-16)
+    H' : [8][w]    // Steps 2 and 3 [FIPS-PUB-180-4 Sections 6.2.2 and 6.4.2].
+    H' = foldl step3 H [0 ..< Klen]
+    step3 : [8][w] -> Integer -> [8][w]
+    step3 [a, b, c, d, e, f, g, h] t =
+        [ T1 + T2
+        , a
+        , b
+        , c
+        , d + T1
+        , e
+        , f
+        , g
+        ]
+       where
+         T1 = h + SIGMA_1 e + Ch (e, f, g) + K@t + W@t
+         T2 = SIGMA_0 a + Maj (a, b, c)

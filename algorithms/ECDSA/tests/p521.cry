@@ -1,0 +1,37 @@
+/* 
+ * Description: This module contains a single test from:
+ *  `https://csrc.nist.gov/Projects/cryptographic-algorithm-validation-program/digital-signatures`
+ */
+
+module algorithms::ECDSA::tests::p521 where
+
+import shared::common::utils::TypeCoercion (BVtoZ)
+import shared::common::utils::Enum (unwrap)
+import algorithms::ECDSA::p521
+import algorithms::SHA2::SHA384 as SHA384
+
+/** Message to sign */
+M = 0xdbc094402c5b559d53168c6f0c550d827499c6fb2186ae2db15b89b4e6f46220386d6f01bebde91b6ceb3ec7b4696e2cbfd14894dd0b7d656d23396ce920044f9ca514bf115cf98ecaa55b950a9e49365c2f3a05be5020e93db92c37437513044973e792af814d0ffad2c8ecc89ae4b35ccb19318f0b988a7d33ec5a4fe85dfe
+
+/** Private key */
+d = BVtoZ (`0x095976d387d814e68aeb09abecdbf4228db7232cd3229569ade537f33e07ed0da0abdee84ab057c9a00049f45250e2719d1ecaccf91c0e6fcdd4016b75bdd98a950 : [521])
+
+/** Random value */
+k = BVtoZ (`0x0a8d90686bd1104627836afe698effe22c51aa3b651737a940f2b0f9cd72c594575e550adb142e467a3f631f4429514df8296d8f5144df86faa9e3a8f13939ad5b3 : [521])
+
+/** `r` component of the signature */
+r = BVtoZ (`0x02128f77df66d16a604ffcd1a515e039d49bf6b91a215b814b2a1c88d32039521fbd142f717817b838450229025670d99c1fd5ab18bd965f093cae7accff0675aae : [521])
+
+/** `s` component of the signature */
+s = BVtoZ (`0x008dc65a243700a84619dce14e44ea8557e36631db1a55de15865497dbfd66e76a7471f78e510c04e613ced332aa563432a1017da8b81c146059ccc7930153103a6 : [521])
+
+/** Public key */
+Q = { x = BVtoZ (`0x13b4ab7bc1ddf7fd74ca6f75ac560c94169f435361e74eba1f8e759ac70ab3af138d8807aca3d8e73b5c2eb787f6dcca2718122bd94f08943a686b115d869d3f406 : [521])
+    , y = BVtoZ (`0x0f293c1d627b44e7954d0546270665888144a94d437679d074787959d0d944d8223b9d4b5d068b4fbbd1176a004b476810475cd2a200b83eccd226d08b444a71e71 : [521])
+    }
+
+/** A test of p521 */
+property p521Test =
+    unwrap(sign M d SHA384::hash k) == (r, s)
+ /\ verify M (r, s) (private_to_public d) SHA384::hash
+ /\ Q == unwrap (ec_affinify (private_to_public d))

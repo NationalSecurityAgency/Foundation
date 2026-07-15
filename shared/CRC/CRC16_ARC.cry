@@ -1,0 +1,15 @@
+/*
+ * Description: This module implements the CRC16 ARC Cyclic
+ * Redundancy Check (CRC) [AUTOSAR Section 7.2.2.1].
+ */
+
+module shared::CRC::CRC16_ARC = shared::CRC::Main where
+
+type CRCResultWidth = 16
+polynomial          = [True] # 0x8005
+initialValue        = 0x0000
+inputDataReflected  = True
+resultDataReflected = True
+XORValue            = 0x0000
+check               = 0xBB3D
+magicCheck          = 0x0000

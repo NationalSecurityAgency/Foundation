@@ -1,0 +1,215 @@
+/*
+ * Description: This is a Cryptol specification of the `Cipher` and
+ * `InvCipher` methods in the Advanced Encryption Standard (AES)
+ * [FIPS-PUB-197].
+ */
+
+module algorithms::AES::Cipher where
+
+import algorithms::AES::Types
+import algorithms::AES::GF28 ((•))
+import algorithms::AES::SBox (SBox, InvSBox)
+
+/**
+ * This function performs one round of AES encryption [FIPS-PUB-197
+ * Section 5.1].
+ */
+Round : Block -> Block -> Block
+Round xs ki = AddRoundKey (MixColumns (ShiftRows (SubBytes xs))) ki
+
+/**
+ * The `Cipher` function performs AES encryption [FIPS-PUB-197
+ * Section 5.1].
+ */
+foreign Cipher : {k} (Key k) => [Nr k + 1]Block -> Block -> Block
+Cipher ([w0] # ws # [wr]) in = state_final
+  where
+    state_initial    = AddRoundKey in w0
+    state_rounds     = foldl Round state_initial ws
+    state_final      = AddRoundKey (ShiftRows (SubBytes state_rounds)) wr
+
+/**
+ * This function performs one round of AES decryption [FIPS-PUB-197
+ * Section 5.3].
+ */
+InvRound : Block -> Block -> Block
+InvRound xs ki = InvMixColumns (AddRoundKey (InvSubBytes (InvShiftRows xs)) ki)
+
+/**
+ * This is an alternate version of the `InvRound` function that is a
+ * proper inverse of `Round`.
+ */
+InvRound' : Block -> Block -> Block
+InvRound' xs ki = InvSubBytes (InvShiftRows (InvMixColumns (AddRoundKey xs ki)))
+
+/**
+ * This property demonstrates that `Round` and `InvRound'` are
+ * inverses.
+ */
+RoundInverts : Block -> Block -> Bool
+property RoundInverts xs ki = InvRound' (Round xs ki) ki == xs
+
+/**
+ * The `InvCipher` function performs AES decryption [FIPS-PUB-197
+ * Section 5.3].
+ */
+foreign InvCipher : {k} (Key k) => [Nr k + 1]Block -> Block -> Block
+InvCipher ([w0] # ws # [wr]) in = state_final
+  where
+    state_initial    = AddRoundKey in wr
+    state_rounds     = foldl InvRound state_initial (reverse ws)
+    state_final      = AddRoundKey (InvSubBytes (InvShiftRows state_rounds)) w0
+
+/**
+ * This is an alternate version of the `InvCipher` function
+ * [FIPS-PUB-197 Section 5.3]. The following deviates from Algorithm 3
+ * but is functionally equivalent and more obviously the inverse of
+ * `Cipher`.
+ */
+InvCipher' : {k} (Key k) => [Nr k + 1]Block -> Block -> Block
+InvCipher' ([w0] # ws # [wr]) in = state_final
+  where
+    state_initial    = InvSubBytes (InvShiftRows (AddRoundKey in wr))
+    state_rounds     = foldl InvRound' state_initial (reverse ws)
+    state_final      = AddRoundKey state_rounds w0
+
+/**
+ * This property demonstrates that `InvCipher` and `InvCipher` are
+ * functionally equivalent.
+ */
+InvCipherEquivalence : {k} (Key k) => [Nr k + 1]Block -> Block -> Bool
+property InvCipherEquivalence ws state =
+    InvCipher`{k} ws state == InvCipher'`{k} ws state
+
+/**
+ * This property demonstrates that `Cipher` and `InvCipher` are
+ * inverses.
+ */
+CipherInverts : {k} (Key k) => [Nr k + 1]Block -> Block -> Bool
+property CipherInverts ws state =
+    InvCipher`{k} ws (Cipher`{k} ws state) == state
+
+/**
+ * This property demonstrates that `Cipher` and `InvCipher'` are
+ * inverses.
+ */
+CipherInverts' : {k} (Key k) => [Nr k + 1]Block -> Block -> Bool
+property CipherInverts' ws state =
+    InvCipher'`{k} ws (Cipher`{k} ws state) == state
+
+/**
+ * This function performs the `SubBytes` transformation [FIPS-PUB-197
+ * Section 5.1.1].
+ */
+SubBytes : Block -> Block
+SubBytes bs = SBox @@ bs
+
+/**
+ * This function performs the `InvSubBytes` transformation
+ * [FIPS-PUB-197 Section 5.3.2].
+ */
+InvSubBytes : Block -> Block
+InvSubBytes bs = InvSBox @@ bs
+
+/**
+ * This property demonstrates that `SubBytes` and `InvSubBytes` are
+ * inverses.
+ */
+SubBytesInverts : Block -> Bool 
+property SubBytesInverts bs = InvSubBytes (SubBytes bs) == bs
+
+/**
+ * This function performs the `ShiftRows` transformation [FIPS-PUB-197
+ * Section 5.1.2]. Here, `ShiftRows` is treated as a permutation of a
+ * sequence bytes rather than a series of cyclic shifts on a matrix of
+ * bytes.
+ */
+ShiftRows : Block -> Block
+ShiftRows bs = bs @@ [  0,  5, 10, 15
+                     ,  4,  9, 14,  3
+                     ,  8, 13,  2,  7
+                     , 12,  1,  6, 11
+                     ]
+
+/**
+ * This function performs the `InvShiftRows` transformation
+ * [FIPS-PUB-197 Section 5.3.1]. Here, `InvShiftRows` is treated as a
+ * permutation of a sequence bytes rather than a series of cyclic
+ * shifts on a matrix of bytes.
+ */
+InvShiftRows : Block -> Block
+InvShiftRows bs = bs @@ [  0, 13, 10,  7
+                        ,  4,  1, 14, 11
+                        ,  8,  5,  2, 15
+                        , 12,  9,  6,  3
+                        ]
+
+/**
+ * This property demonstrates that `ShiftRows` and `InvShiftRows` are
+ * inverses.
+ */
+ShiftRowsInverts : Block -> Bool
+property ShiftRowsInverts xs = InvShiftRows (ShiftRows xs) == xs
+
+/**
+ * This is one step of `MixColumns` [FIPS-PUB-197 Section 5.1.3].
+ */
+MixColumnsStep : AESWord -> AESWord
+MixColumnsStep [s0, s1, s2, s3] =
+    [ (0x02 • s0) ^ (0x03 • s1) ^ s2          ^ s3
+    , s0          ^ (0x02 • s1) ^ (0x03 • s2) ^ s3
+    , s0          ^ s1          ^ (0x02 • s2) ^ (0x03 • s3)
+    , (0x03 • s0) ^ s1          ^ s2          ^ (0x02 • s3)
+    ]
+
+/**
+ * This function performs the `MixColumns` transformation
+ * [FIPS-PUB-197 Section 5.1.3].
+ */
+MixColumns : Block -> Block
+MixColumns bs = join (map MixColumnsStep (split bs))
+
+/**
+ * The is one step of `InvMixColumns` [FIPS-PUB-197 Section 5.3.3].
+ */
+InvMixColumnsStep : AESWord -> AESWord
+InvMixColumnsStep [s0, s1, s2, s3] =
+    [ (0x0e • s0) ^ (0x0b • s1) ^ (0x0d • s2) ^ (0x09 • s3)
+    , (0x09 • s0) ^ (0x0e • s1) ^ (0x0b • s2) ^ (0x0d • s3)
+    , (0x0d • s0) ^ (0x09 • s1) ^ (0x0e • s2) ^ (0x0b • s3)
+    , (0x0b • s0) ^ (0x0d • s1) ^ (0x09 • s2) ^ (0x0e • s3)
+    ]
+
+/**
+ * This function performs the `InvMixColumns` transformation
+ * [FIPS-PUB-197 Section 5.3.3].
+ */
+InvMixColumns : Block -> Block
+InvMixColumns bs = join (map InvMixColumnsStep (split bs))
+
+/**
+ * This property demonstrates that the step functions of `MixColumns`
+ * and `InvMixColumns` are inverses.
+ */
+MixColumnsStepInverts : AESWord -> Bool
+property MixColumnsStepInverts b = InvMixColumnsStep (MixColumnsStep b) == b
+
+/**
+ * This property demonstrates that `MixColumns` and `InvMixColumns` are
+ * inverses.
+ */
+MixColumnsInverts : Block -> Bool
+property MixColumnsInverts bs = InvMixColumns (MixColumns bs) == bs
+
+/**
+ * This function adds a round key into the current state [FIPS-PUB-197
+ * Section 5.1.4].
+ */
+AddRoundKey : Block -> Block -> Block
+AddRoundKey bs w = bs ^ w
+
+/**
+ * This property demonstrates that `AddRoundKey` is an involution.
+ */
+AddRoundKeyInvolution : Block -> Block -> Bool
+property AddRoundKeyInvolution bs w = AddRoundKey (AddRoundKey bs w) w == bs

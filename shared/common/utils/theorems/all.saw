@@ -1,0 +1,33 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `shared/commong/utils`.
+ */
+
+// Include common SAW utilities.
+include "../../../../shared/SAW/utils.saw";
+
+include "Sequence.saw";
+let Sequence_main = main;
+
+include "TypeCoercion.saw";
+let TypeCoercion_main = main;
+
+/*
+ * Script to run on command line:
+ *   `saw all.saw`
+ * Return:
+ *   `TopLevel [Theorem]` verifying all lemmas used throughout `shared/common/utils`.
+ */
+let main : TopLevel [Theorem] = do {
+  Sequence_lemmas     <- Sequence_main;
+  TypeCoercion_lemmas <- TypeCoercion_main;
+
+  summarize_verification;
+
+  return
+    (foldl concat []
+      [ Sequence_lemmas
+      , TypeCoercion_lemmas
+      ]
+    );
+};

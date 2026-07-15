@@ -1,0 +1,227 @@
+/*
+ * Description: This is a generic module for Cyclic Redundancy Checks
+ * (CRCs) that follows guidance from [AUTOSAR].
+ */
+
+module shared::CRC::Main where
+
+parameter
+
+  /**
+   * Defines the result data width of the CRC calculation [AUTOSAR
+   * Section 7.2].
+   */
+  type CRCResultWidth : #
+  type constraint (fin CRCResultWidth, CRCResultWidth > 0)
+
+  /**
+   * Defines the generator polynomial which is used for the CRC
+   * algorithm [AUTOSAR Section 7.2]. One can use Cryptol's built-in
+   * polynomial representation. For example,
+   *    <| x^^8 + x^^4 + x^^3 + x^^2 + 1 |>
+   * or use sequences of `Bit`s,
+   *    [True] # 0x1D
+   */
+  polynomial : [1 + CRCResultWidth]
+
+  /**
+   * Defines the start condition for the CRC algorithm [AUTOSAR
+   * Section 7.2]. When a CRC is viewed as a linear feedback shift
+   * register, this value is called the initial fill.
+   */
+  initialValue : [CRCResultWidth]
+
+  /**
+   * Defines whether the bits of each input byte are reflected before
+   * being processed [AUTOSAR Section 7.2]. Reflection is
+   * computed below by `reflection`.
+   */
+  inputDataReflected : Bit
+
+  /**
+   * Similar to "Input data reflected" this parameter defines whether
+   * the bits of the CRC result are reflected [AUTOSAR Section 7.2].
+   * Since this reflection happens over all bits in the result,
+   * reflection here is the same as reversing the result, see the
+   * `reflection_reverse` property below.
+   */
+  resultDataReflected : Bit
+
+  /**
+   * This value is XORed to the final register value before the value
+   * is returned as the official checksum [AUTOSAR Section 7.2].
+   */
+  XORValue : [CRCResultWidth]
+
+  /**
+   * This field is a check value that can be used as a weak validator
+   * of implementations of the algorithm. The field contains the
+   * checksum obtained when the ASCII values "123456789" corresponding
+   * to values `[0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39]`
+   * is fed through the specified algorithm [AUTOSAR Section 7.2].
+   * The `check` value can be found using the `generateCheck` function
+   * provided in this module.
+   */
+  check : [CRCResultWidth]
+
+  /**
+   * The CRC checking process calculates the CRC over the entire data
+   * block, including the CRC result. An error-free data block will
+   * always result in the unique constant polynomial (magic check) -
+   * representing the CRC-result XORed with `XORValue` - regardless of
+   * the data block content [AUTOSAR Section 7.2].
+   * The `magicCheck` value can be found using the
+   * `generateMagicCheck` function provided in this module. This is also
+   * sometimes referred to as the residue.
+   */
+  magicCheck : [CRCResultWidth]
+
+/**
+ * This function uses polynomial arithmetic to calculate the Cyclic
+ * Redundancy Check of a given input.
+ */
+CRC : {a} (fin a) => [a] -> [CRCResultWidth]
+CRC data = unpack (CRCSimple (pack data))
+
+/**
+ * This function uses polynomial arithmetic to update the Cyclic
+ * Redundancy Check of a given input and previous CRC result. The CRC
+ * of the running data is the `crc` element of the returned record. The
+ * running internal state is the `state` element of the returned record.
+ * This function would be called like so:
+ *   > (CRCUpdate (CRCUpdate initialValue (join "hello")).state (join "world")).crc
+ * which is identical to:
+ *   > CRC (join "helloworld")
+ */
+CRCUpdate :
+    {a}
+    (fin a)
+ => [CRCResultWidth]
+ -> [a]
+ -> { crc: [CRCResultWidth], state: [CRCResultWidth] }
+CRCUpdate state data =
+    { crc   = unpack (state' ^ XORValue)
+    , state = state'
+    }
+  where
+    expandedData = ((pack data) # zero) ^ (state # zero) : [a + CRCResultWidth]
+    state'       = pmod expandedData polynomial
+
+/**
+ * This property demonstrates that `CRCUpdate` works for any given inputs.
+ */
+CRCUpdateCorrect : {a, b} (fin a, fin b) => [a] -> [b] -> Bool
+property CRCUpdateCorrect x y =
+    (CRCUpdate (CRCUpdate initialValue x).state y).crc
+ == CRC (x # y)
+
+/**
+ * This tests that `CRCUpdate` works correctly.
+ */
+property CRCUpdateTest = CRCUpdateCorrect (join "hello") (join "world")
+
+/**
+ * This function creates a running sequence of Cyclic Redundancy Check
+ * values of a given sequence.
+ */
+CRCRunning : {a, n} (fin a, fin n) => [n][a] -> [n][CRCResultWidth]
+CRCRunning xs = crcs.crc
+  where
+    crcs = [ CRCUpdate state x
+           | state <- [ initialValue ] # crcs.state
+           | x <- xs
+           ]
+
+/*
+ * This can be used to check the linearity of a CRC.
+ */
+CRClinearityCheck : {a, b} (fin a, fin b, b >= 1) => [a*b] -> Bool
+CRClinearityCheck data = 
+    CRC (foldl (^) zero data') == foldl (^) zero (map CRC data')
+  where
+    data' = split`{each = b} data
+
+/**
+ * Property to verify that the magicCheck is correct.
+ */
+magicCheckCorrect : {a} (fin a) => [a] -> Bool
+property magicCheckCorrect data = magicCheck == generateMagicCheck data
+
+/**
+ * Property to verify that the check value is correct.
+ */
+property checkCorrect = check == generateCheck
+
+/**
+ * This property demonstrates when `reflection` is `reverse`.
+ */
+property reflectionReverse =
+    reflection`{CRCResultWidth, CRCResultWidth} === reverse
+
+/**
+ * These tests are taken from [AUTOSAR Section 7.2]. There are some
+ * mistakes in the test vectors. They are corrected here.
+ */
+property reflectionTests =
+     (reflection`{ 8} 0x2d               == 0xB4)
+  /\ (reflection`{32} 0x12345678         == 0x1E6A2C48)
+  /\ (reflection`{64} 0x123456789ABCDEF0 == 0x0F7B3D591E6A2C48)
+  /\ (reflection`{ 4} 0x123456789ABCDEF0 == 0x84C2A6E195D3B7F0)
+
+private
+
+/**
+ * This function uses polynomial arithmetic to calculate the Cyclic
+ * Redundancy Check of a given input. No packing or unpacking is
+ * performed.
+ */
+CRCSimple : {a} (fin a) => [a] -> [CRCResultWidth]
+CRCSimple data = result
+  where
+    expandedData = (data # zero) ^ (initialValue # zero) : [a + CRCResultWidth]
+    result       = pmod expandedData polynomial ^ XORValue
+
+/**
+ * Map data to D(X) [AUTOSAR, Section 7.1.3].
+ */
+pack : {a} (fin a) => [a] -> [a]
+pack data = if inputDataReflected then reflection`{8} data else data
+
+/**
+ * Map D(X), R(X) to codeword [AUTOSAR, Section 7.1.3].
+ */
+unpack : [CRCResultWidth] -> [CRCResultWidth]
+unpack result =
+    if polynomial == 0     then zero
+     | resultDataReflected then reflection`{CRCResultWidth} result
+    else                        result
+
+/**
+ * Generate the magic check. For CRCs that reflect inputs and/or
+ * outputs, this should be run on a type and data value that will
+ * trigger the reflection(s). For example, `generateMagicCheck
+ * 0x12345678` rather than `generateMagicCheck`{0} 0`.
+ */
+generateMagicCheck : {a} (fin a) => [a] -> [CRCResultWidth]
+generateMagicCheck data =
+    unpack (CRCSimple (pack data # inner) ^ XORValue)
+  where
+    // To match the magic check value when inputs and/or outputs are
+    // reflected, the inner CRC must be rejiggered [AUTOSAR Section
+    // 7.2.3.1].
+    inner = unpack (CRC data)
+
+/**
+ * Generate the check value.
+ */
+generateCheck = CRC (join "123456789")
+
+/**
+ * Reverse groups of bits where the grouping is usually either bytes
+ * or the whole input [AUTOSAR Section 7.2]. An error is thrown if
+ * there are any residual bits.
+ */
+reflection : {n, a} (fin a, fin n, n > 0) => [a] -> [a]
+reflection d
+  | a % n == 0 => join (map reverse (split d : [a / n][n]))
+  | a % n != 0 => repeat (error "This CRC only accepts strings of bytes as input, but was given a string of bits.")

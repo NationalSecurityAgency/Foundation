@@ -1,0 +1,21 @@
+/*
+ * Description: This module provides an interface for GF(2^n) Field
+ * elements that make use of the same set of operators
+ * defined in `Functor.cry`.
+ */
+
+interface module shared::algebra::Field::GF2n::Interface where
+
+/** power of 2 for GF(2^n) */
+type n : #
+type constraint (fin n, n >= 2)
+
+/**
+ * Irreducible polynomial in GF(2)[x]. Irreducibility can be checked
+ * using `is_irreducible` from `shared::algebra::Polynomial::GF2`. A
+ * *reducible* polynomial could still be used to form the *quotient
+ * ring* `GF(2)[x]/p`, which would not be a field and thus lack fully
+ * defined reciprocation and division operators for nonzero
+ * polynomials.
+ */
+p : [n+1]

@@ -1,0 +1,15 @@
+/*
+ * Description: This module implements the IEEE-802.3 CRC32 Ethernet
+ * Cyclic Redundancy Check (CRC) [AUTOSAR Section 7.2.3.1].
+ */
+
+module shared::CRC::CRC32_IEEE_802_3_Ethernet = shared::CRC::Main where
+
+type CRCResultWidth = 32
+polynomial          = [True] # 0x04C11DB7
+initialValue        = 0xFFFFFFFF
+inputDataReflected  = True
+resultDataReflected = True
+XORValue            = 0xFFFFFFFF
+check               = 0xCBF43926
+magicCheck          = 0xDEBB20E3

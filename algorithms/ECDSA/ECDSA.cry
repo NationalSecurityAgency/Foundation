@@ -1,0 +1,206 @@
+/*
+ * Description: This module provides ECDSA signature creation and
+ * verification routines for the NIST elliptic curves P-192, P-224,
+ * P-256, P-384, and P-521 [FIPS186-5].
+ */
+
+module algorithms::ECDSA::ECDSA where
+
+import shared::common::utils::TypeCoercion (ZtoZ)
+import shared::common::utils::Enum (unwrap)
+import algorithms::ECDSA::Routines as Routines where
+    type p = _p
+    b = _b
+    mp_mod_sqrt = _mp_mod_sqrt
+
+parameter
+  /**
+   * `p` is an odd prime number > 3 [NSA19 Section 1], used to make an
+   * elliptic curve over `GF(p)`.
+   */
+  type p : #
+  type constraint (fin p, prime p, p > 8)  // `p > 8` comes from scalar multiplications.
+
+  /**
+   * An elliptic curve over `GF(p)` has an order, which is the
+   * smallest positive integer `n` such that for any point `S`, `nS =
+   * O`. The order of each of the NIST elliptic curves is prime [NSA19
+   * Section 2.2].
+   */
+  type n : #
+  type constraint (prime n, p >= n)
+
+  /**
+   * Elliptic curve parameter. y ^^ 2 == x ^^ 3 - 3 * x + b [NSA19
+   * Section 1].
+   */
+  b : Z p
+
+  /** Base point for an elliptic curve group [NSA19 Section 1]. */
+  G : { x : Z p, y : Z p, z : Z p }
+
+  /**
+   * Modular square root function specialized on `p` [NSA19 Section
+   * 3.2].
+   */
+  mp_mod_sqrt : Z p -> Z p
+
+/* Workaround for parameter hiding */
+type _p = p
+_b = b
+_mp_mod_sqrt = mp_mod_sqrt
+
+/**
+ * ECDSA Signature Generation Algorithm [FIPS186-5 Section 6.4.1].
+ *
+ * Inputs:
+ *   `M`: Bit string to be signed.
+ *   `d`: Private key in the interval [1, n-1].
+ *   `Hash`: an approved hash function [FIPS186-5 Section 2.3].
+ *   `k`: a per-message secret number (0 < k < n).
+ *
+ * Outputs:
+ *   `(r, s)`: A pair of integers each in the interval `[1, n-1].
+ *
+ * Types:
+ *   `hashlen`: The digest size of `Hash` [FIPS186-5 Section 6.4.1].
+ */
+sign :
+    { hashlen, a }
+    ( fin hashlen, fin a )
+ => [a] -> Z n -> ([a] -> [hashlen]) -> Z n -> Result (Z n, Z n) (String _)
+sign M d Hash k =
+    if d == 0 \/ r == 0 \/ s == 0 then
+      Err "failure"
+    else Ok (r, s)
+  where
+    // 1. Compute `H = Hash(M)`
+    H = Hash M : [hashlen]
+    // 2(a). If `len(n) ≥ hashlen`, set `E = H`. Otherwise, set `E`
+    //       equal to the leftmost `log2(n)` bits of `H`.
+    E = take H : [min (width n) hashlen]
+    // 2(b). Convert the bit string `E` to the integer `e`.
+    e = fromInteger (toInteger E) : Z n
+    // 4. Compute `k^^-1 mod n`.
+    k' = recip k
+    // 5. Compute the elliptic curve point `R = [k]G`.
+    R  = Routines::ec_mult (ZtoZ k) G
+    // 6. Set `xR` to x-coordinate of the affine representation of the
+    // point `R = (xR, yR)`. By definition of 'order', `[k]G` is not
+    // the point at infinity, and so the Affine transformation of
+    // `[k]G` will not fail. Hence `unwrap` here is safe to use.
+    {x = xR, y = _} = unwrap (ec_affinify R) 
+    // 7. Convert the field element `xR` to the integer `r1`.
+    r1 = fromZ xR
+    // 8. Set `r = r1 mod n`
+    r  = fromInteger r1 : Z n
+    // 9. Compute `s = `k^^-1 * (e + r * d) mod n`
+    s  = k' * (e + r * d)
+
+/**
+ * ECDSA Signature Verification Algorithm [FIPS186-5 Section 6.4.2].
+ *
+ * Inputs:
+ *   `M`: A message
+ *   `(r, s)`: A pair of integers.
+ *   `Q`: A purported signature verification key.
+ *   `Hash`: an approved hash function [FIPS186-5 Section 2.3].
+ *
+ * Outputs:
+ *   A Boolean value denoting "accept" (`True`) or "reject" (`False`).
+ *
+ * Types:
+ *   `hashlen`: The digest size of `Hash` [FIPS186-5 Section 6.4.1].
+ */
+verify :
+    { hashlen, a }
+    ( fin hashlen, fin a )
+ => [a] -> (Z n, Z n) -> ProjectivePoint -> ([a] -> [hashlen]) -> Bool
+verify M (r, s) Q Hash =
+    // 1. Verify that both `r` and `s` are integers in the interval
+    //    `[1, n − 1]`. Output “reject” if verification fails.
+    if r == 0 \/ s == 0 \/ affinifyFailed \/ r1VerificationFailed then
+      False
+    else True
+  where
+    // 2. Compute `H = Hash(M)`
+    H = Hash M : [hashlen]
+    // 3(a). If `len(n) ≥ hashlen`, set `E = H`. Otherwise, set `E`
+    //       equal to the leftmost `log2(n)` bits of `H`.
+    E = take H : [min (width n) hashlen]
+    // 3(b). Convert the bit string `E` to the integer `e`.
+    e = fromInteger (toInteger E) : Z n
+    // 4. Compute `s^^-1 mod n`.
+    s' = recip s
+    // 5. Compute `u = e * s^^-1` and `v = r * s^^-1`.
+    (u, v) = (e * s', r * s')
+    // 6. Compute `R1 = [u]G + [v]Q`.
+    R1 = Routines::ec_twin_mult (ZtoZ u) G (ZtoZ v) Q
+    // 7. Set `xR` to x-coordinate of the affine representation of the
+    // point `R1 = (xR, yR)`.
+    ({x = xR, y = _}, affinifyFailed) =
+        case (ec_affinify R1) of
+          Ok  a -> (a, False)
+          Err _ -> (undefined, True)
+    // 8. Convert the field element `xR` to the integer `r1`.
+    r1 = fromZ xR
+    // 9. Verify that `r = r1 mod n`
+    r1VerificationFailed = r != fromInteger r1
+
+/**
+ * ECDSA Key Pair Generation [FIPS186-5 Section A.2.1]. Essentially
+ * step 5.
+ */
+private_to_public : Z n -> ProjectivePoint
+private_to_public d = Routines::ec_mult (ZtoZ d) G
+
+/**
+ * Routine 2.2.2: Create an affine point `R` from a projective point
+ * `S` [NSA19 Section 2.2].
+ */
+ec_affinify : ProjectivePoint -> Result AffinePoint (String _)
+ec_affinify = Routines::ec_affinify
+
+/**
+ * "The affine representations of `S` is a pair `S = (Sx, Sy)` of
+ * elements of `GF(p)` which satisfy the defining equation [NSA19
+ * Section 2.2]."
+ */ 
+type AffinePoint = Routines::AffinePoint
+
+/**
+ * A projective representation of `S` is a triple `S = (Sx, Sy, Sz) of
+ * elements of `GF(p)`, such that `Sy ^^ 2 == Sx ^^ 3 * Sz ^^ 4 + b *
+ * Sz ^^ 6 (mod p)` [NSA19 Section 2.2].
+ */
+type ProjectivePoint = Routines::ProjectivePoint
+
+/**
+ * Routine 2.2.3: Set `Rbar` to compressed `Sbar` from an affine point
+ * `S` [NSA19 Section 2.2].
+ */
+ec_compress : AffinePoint -> [2 + width p]
+ec_compress = Routines::ec_compress
+
+/**
+ * Routine 2.2.4: Create an affine point `R` from compressed `Sbar`
+ * [NSA19 Section 2.2].
+ */
+ec_decompress : [2 + width p] -> Result AffinePoint (String _)
+ec_decompress = Routines::ec_decompress
+
+/**
+ * Use `G` as a generator to produce random affine points and test the
+ * compression and decompression algorithms.
+ *
+ * ```
+ * :check decompress_correct
+ * ```
+ */ 
+decompress_correct : Z n -> Bool
+property decompress_correct x =
+    affine_decompress_correct (unwrap (ec_affinify (Routines::ec_mult (ZtoZ x) G)))
+  where
+    affine_decompress_correct : AffinePoint -> Bool
+    affine_decompress_correct R =
+        R == unwrap (ec_decompress (ec_compress R))

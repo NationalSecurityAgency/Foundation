@@ -1,0 +1,13 @@
+[package]
+name = "KeyExpansion"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "KeyExpansion"
+path = "src/lib.rs"
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+ffi_utils = { path = "../../../../shared/rust/ffi_utils" }
+Cipher = { path = "../Cipher" }

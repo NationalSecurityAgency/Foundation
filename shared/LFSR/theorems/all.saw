@@ -1,0 +1,23 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `shared/LFSR`.
+ */
+
+enable_experimental;
+
+include "Main.saw";
+let Main_main = main;
+
+/*
+ * Script to run on command line:
+ *   `saw all.saw`
+ * Return:
+ *   `TopLevel [Theorem]` verifying all lemmas used throughout `shared/LFSR`.
+ */
+let main : TopLevel [Theorem] = do {
+  lemmas <- Main_main;
+
+  summarize_verification;
+
+  return lemmas;
+};

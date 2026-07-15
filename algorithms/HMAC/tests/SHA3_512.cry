@@ -1,0 +1,67 @@
+/*
+ * Description: The following properties check test vectors for
+ * HMAC-SHA3-512 provided by [NIST HMAC Examples].
+ */
+module algorithms::HMAC::tests::SHA3_512 where
+
+import algorithms::SHA3::SHA3_512 (HMAC)
+
+property Sample1 = HMAC key msg == mac
+  where
+    key = split (join [ 0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f
+                      , 0x10111213, 0x14151617, 0x18191a1b, 0x1c1d1e1f
+                      , 0x20212223, 0x24252627, 0x28292a2b, 0x2c2d2e2f
+                      , 0x30313233, 0x34353637, 0x38393a3b, 0x3c3d3e3f
+                      ])
+    msg = join "Sample message for keylen<blocklen"
+    mac = join [ 0x4efd629d, 0x6c71bf86, 0x162658f2, 0x9943b1c3
+               , 0x08ce27cd, 0xfa6db0d9, 0xc3ce8176, 0x3f9cbce5
+               , 0xf7ebe986, 0x8031db1a, 0x8f8eb7b6, 0xb95e5c5e
+               , 0x3f657a89, 0x96c86a2f, 0x6527e307, 0xf0213196
+               ]
+
+property Sample2 = HMAC key msg == mac
+  where
+    key = split (join [ 0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f
+                      , 0x10111213, 0x14151617, 0x18191a1b, 0x1c1d1e1f
+                      , 0x20212223, 0x24252627, 0x28292a2b, 0x2c2d2e2f
+                      , 0x30313233, 0x34353637, 0x38393a3b, 0x3c3d3e3f
+                      , 0x40414243, 0x44454647
+                      ])
+    msg = join "Sample message for keylen=blocklen"
+    mac = join [ 0x544e257e, 0xa2a3e5ea, 0x19a590e6, 0xa24b724c
+               , 0xe6327757, 0x723fe275, 0x1b75bf00, 0x7d80f6b3
+               , 0x60744bf1, 0xb7a88ea5, 0x85f9765b, 0x47911976
+               , 0xd3191cf8, 0x3c039f5f, 0xfab0d29c, 0xc9d9b6da
+               ]
+
+property Sample3 = HMAC key msg == mac
+  where
+    key = split (join [ 0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f
+                      , 0x10111213, 0x14151617, 0x18191a1b, 0x1c1d1e1f
+                      , 0x20212223, 0x24252627, 0x28292a2b, 0x2c2d2e2f
+                      , 0x30313233, 0x34353637, 0x38393a3b, 0x3c3d3e3f
+                      , 0x40414243, 0x44454647, 0x48494a4b, 0x4c4d4e4f
+                      , 0x50515253, 0x54555657, 0x58595a5b, 0x5c5d5e5f
+                      , 0x60616263, 0x64656667, 0x68696a6b, 0x6c6d6e6f
+                      , 0x70717273, 0x74757677, 0x78797a7b, 0x7c7d7e7f
+                      , 0x80818283, 0x84858687
+                      ])
+    msg = join "Sample message for keylen>blocklen"
+    mac = join [ 0x5f464f5e, 0x5b7848e3, 0x885e49b2, 0xc385f069
+               , 0x4985d0e3, 0x8966242d, 0xc4a5fe3f, 0xea4b37d4
+               , 0x6b65cece, 0xd5dcf594, 0x38dd840b, 0xab22269f
+               , 0x0ba7febd, 0xb9fcf746, 0x02a35666, 0xb2a32915
+               ]
+
+property Sample4 = take (HMAC key msg) == mac
+  where
+    key = split (join [ 0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f
+                      , 0x10111213, 0x14151617, 0x18191a1b, 0x1c1d1e1f
+                      , 0x20212223, 0x24252627, 0x28292a2b, 0x2c2d2e2f
+                      , 0x30313233, 0x34353637, 0x38393a3b, 0x3c3d3e3f
+                      ])
+    msg = join "Sample message for keylen<blocklen, with truncated tag"
+    mac = join [ 0x7bb06d85, 0x9257b25c, 0xe73ca700, 0xdf34c5cb
+               , 0xef5c898b, 0xac91029e, 0x0b27975d, 0x4e526a08
+               ]

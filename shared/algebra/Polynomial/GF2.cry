@@ -1,0 +1,190 @@
+/*
+ * Additional functions for polynomials with coefficients in GF(2)
+ *
+ * Cryptol includes various functions (`pmult`, `pmod`, `pdiv`) for
+ * `GF(2)[x]` (monovariate polynomials with coefficients in GF(2)).
+ *
+ * Block ciphers such as the Advanced Encryption Standard (AES)
+ * [FIPS-PUB-197] and the Lightweight Encryption Device (LED) cipher
+ * [LED] are based on *quotient rings* `GF(2)[x]/p`, where `p` is an
+ * *irreducible* polynomial of degree `n` (8 for AES and 4 for LED),
+ * thus generating *field extensions* of GF(2).
+ *
+ * These utility functions can determine whether a given polynomial
+ * over GF(2) is irreducible, and its degree -- and thus enable (via
+ * `shared::algebra::GF2n`) creating a *field extension* or just a
+ * *quotient ring* over polynomials with coefficients in GF(2) modulo
+ * the irreducible polynomial.
+ */
+
+module shared::algebra::Polynomial::GF2 where
+
+import shared::common::utils::Prime (sieve)
+
+/**
+ * binary operator mirroring `^` to implement addition (which is
+ * equivalent to subtraction) for polynomials over GF(2)
+ */
+infixl 80 ^+
+(^+) : {u, v} (fin u, fin v) => [1 + u] -> [1 + v] -> [1 + max u v]
+x ^+ y = zext`{1 + max u v} x ^ zext`{1 + max u v} y
+
+/**
+ * binary operator mirroring `^` to implement subtraction (which is
+ * equivalent to addition) for polynomials over GF(2)
+ */
+infixl 80 ^-
+(^-) : {u, v} (fin u, fin v) => [1 + u] -> [1 + v] -> [1 + max u v]
+x ^- y = x ^+ y
+
+/** binary operator mirroring `pmult` for polynomials over GF(2) */
+infixl 90 ^*
+(^*) : {u, v} (fin u, fin v) => [1 + u] -> [1 + v] -> [1 + (u + v)]
+(^*) = pmult
+
+/** binary operator mirroring `pdiv` for polynomials over GF(2) */
+infixl 90 ^/
+(^/) : {u, v} (fin u, fin v) => [u] -> [v] -> [u]
+(^/) = pdiv
+
+/** binary operator mirroring `pmod` */
+infixl 90 ^%
+(^%) : {u, v} (fin u, fin v) => [u] -> [1 + v] -> [v]
+(^%) = pmod
+
+/**
+ * binary operator for exponentation over a field defined by a given
+ * irreducible polynomial `p`
+ */
+infixr 95 ^^^
+(^^^) :
+    { u, v, a }
+    ( fin u, fin v, Integral a, Cmp a, Literal 1 a )
+ => [1 + u] -> (a, [2 + v]) -> [1 + v]
+x ^^^ (k, p) =
+    if k < 0 then error "negative exponent" else pow k
+  where
+    sq y  = (y ^* y) ^% p
+    odd y = y % fromInteger 2 == 1
+    pow i = if i == 0 then 1
+             | i == 1 then x ^% p
+             | odd i  then (x ^* i') ^% p
+            else i'
+      where i' = sq (pow (i / fromInteger 2))
+
+/** degree of polynomial with coefficients in GF(2) */
+pdeg : {w} (fin w) => [w] -> Integer
+pdeg p = toInteger (lg2 ((0b0 # p) + 1)) - 1
+
+/**
+ * This is the extended Euclidean algorithm for polynomials over
+ * GF(2).
+ *
+ * Input:
+ *   * `a` and `b`
+ *     polynomials over GF(2)
+ * Output:
+ *   * `g`
+ *     greatest common divisor (GCD)
+ *   * `u` and `v`
+ *     Bézout coefficients
+ *   * `a'` and `b'`
+ *     dividends of `a` and `b` by `g`
+ * Postconditions:
+ *   * `g == au + bv`
+ *     (Bézout coefficients satisfy Bézout's identity.)
+ *   * `a == ga'` and `b == gb'`
+ *   * `u` and `v` are the `0` and `1` polynomials, or
+ *     `deg u < deg b - deg g` and `deg v < deg a - deg g`.
+ *     (Bézout coefficients have degree bounded by input polynomials
+ *     and their GCD.)
+ */
+pgcd :
+    {wa, wb}
+    (fin wa, fin wb)
+ => [1 + wa] -> [1 + wb]
+ -> [5][1 + max wa wb]
+pgcd a b = [g, u, v, a', b']
+  where
+    type Poly = [1 + max wa wb]
+    type State = [6]Poly
+
+    inner : State -> State
+    inner [r, s, t, r', s', t'] =
+        if r' == <| 0 |> then
+          [r, s, t, r', s', t']
+        else
+          inner [r', s', t', r'', s'', t'']
+      where
+          q = r ^/ r'
+
+          (^.) : Poly -> Poly -> Poly
+          x ^. x' = drop (zext x ^ q ^* x')
+
+          [r'', s'', t''] = zipWith (^.) [r, s, t] [r', s', t']
+
+    [g, u, v, _, b', a'] =
+        inner [ zext a, <| 1 |>, <| 0 |>
+              , zext b, <| 0 |>, <| 1 |>
+              ]
+
+/**
+ * Multiplicative inverse computed via the extended Euclidean
+ * algorithm.
+ */
+inverse : {u, v} (fin u, fin v) => [1 + u] -> [1 + v] -> [max u v]
+inverse a p = tail (pgcd`{wb=v} a p @ 1)
+
+/**
+ * whether polynomials `a` and `b` are relatively prime
+ * (have no common polynomial factors greater than `<| 1 |>`)
+ */
+coprime : {u, v} (fin u, fin v) => [1 + u] -> [1 + v] -> Bool
+coprime a b = pgcd a b @ 0 == <| 1 |>
+
+/**
+ * whether a polynomial with coefficients in GF(2) is irreducible
+ * (cannot be expressed as a product of polynomials of degree between
+ * 0 and its own, exclusive) and can thus produce a field extension
+ */
+is_irreducible : {w} (fin w) => [1 + w] -> Bool
+is_irreducible p
+  | w == 0 => False
+  | w == 1 => True
+  | w  > 1 =>
+      p != 0
+   /\ drop (pmult (pdiv m p) p) == m
+   /\ and [ d <= n
+        ==> n % d == 0
+        ==> ~ sieve`{(w+1)/2} @ d
+        ==> coprime p (((1 << (1 << (n/d) : [1 + w])) || 2) : [1 + 2^^w])
+          | d <- [2 .. w] ]
+      where
+        n = pdeg p
+        m = (1 << (1 << n : [1 + w])) || 2 : [1 + 2^^w]
+
+/**
+ * whether a polynomial with coefficients in GF(2) is primitive
+ * (generates all nonzero polynomials up to same degree)
+ */
+is_primitive : {w} (fin w) => [1 + w] -> Bool
+is_primitive p =
+    is_irreducible p
+ /\ is_primitive_aux`{w} p
+
+/**
+ * helper function for `is_primitive`
+ *
+ * Reduce `w` down to degree of `p`, then check whether `2^^n - 1` is
+ * the least `M` s.t. `p` is a factor of `x^M + 1`
+ */
+is_primitive_aux : {w} (fin w) => [1 + w] -> Bool
+is_primitive_aux p
+  | w == 0 => False
+  | w  > 0 =>
+      if `w > pdeg p then
+        is_primitive_aux`{w} p
+      else
+        map f [ 0 ..< 2^^w ] == zext 0b1
+    where
+      f m = pmod (1 << m || 1 : [2^^(1 + w)]) p == <| 0 |>

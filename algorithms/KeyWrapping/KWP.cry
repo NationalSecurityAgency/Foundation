@@ -1,0 +1,94 @@
+/*
+ * Description: This is a Cryptol specification for the KWP-AE and KWP-AD
+ * functions [NIST-800-38F].
+ */
+module algorithms::KeyWrapping::KWP where
+
+import algorithms::KeyWrapping::W64
+import shared::common::utils::Enum (unwrap)
+
+// [NIST-800-38F Section 4.3] Variables
+
+ICV2 = 0xA65959A6 : [32]
+
+// [NIST-800-38F Section 6.3] KWP
+
+/**
+ * KWP-AE (Algorithm 5) specifies the authenticated-encryption function
+ * for KWP for a given block cipher and KEK. The wrapping function, W,
+ * is invoked in Step 5 with the same block cipher and KEK as
+ * prerequisites.
+ */
+KWPAE :
+    { k, n }
+    ( 1 <= k, k < 2^^32
+    , 2 <= n, n == 1 + k /^ 8
+    )
+ => ([128] -> [128]) -> [k * 8] -> [n * 64]
+KWPAE CIPHk P = C' CIPHk S
+  where
+    type padlen = 8 * (k*8 /^ 64) - k
+    PAD         = 0 : [8 * padlen]
+    S           = ICV2 # (fromInteger (len P / 8) : [32]) # P # PAD : [n * 64]
+
+/**
+ * This is a helper function that handles the case split on `len P`
+ * for `KWPAE`.
+ */
+C' : {n} (fin n, n >= 2) => ([128] -> [128]) -> [n * 64] -> [n * 64]
+C' CIPHk S
+  | n == 2 => CIPHk S
+  | n  > 2 => W CIPHk S
+
+/*
+ * KWP-AD (Algorithm 6) specifies the authenticated-decryption function
+ * for KWP for a given block cipher and KEK. The unwrapping function,
+ * W', is invoked in Step 4 with the same block cipher and KEK as
+ * prerequisites.
+ */
+KWPAD :
+    { k, n }
+    ( 1 <= k, k < 2^^32
+    , 2 <= n, n == 1 + k /^ 8
+    )
+ => ([128] -> [128]) -> [n * 64] -> Result [k * 8] (String 4)
+KWPAD CIPHk' C =
+    if ICV2' != ICV2
+    \/ Plen  != (fromInteger (len P / 8) : [32])
+    \/ PAD   != 0
+    then Err "FAIL"
+    else Ok P
+  where 
+      S = S' CIPHk' C
+      Plen : [32]
+      PAD  : [k*8 %^ 64]
+      ICV2' # Plen # P # PAD = S
+
+/**
+ * This is a helper function that handles the case split on `len P`
+ * for `KWPAD`.
+ */
+S' : {n} (fin n, n >= 2) => ([128] -> [128]) -> [n * 64] -> [n * 64]
+S' CIPHk' C
+  | n == 2 => CIPHk' C
+  | n  > 2 => W' CIPHk' C
+
+/**
+ * This property demonstrates that `KWPAD` inverts `KWPAE`.
+ *
+ * ```
+ * :s prover=w4-yices
+ * :prove \(P : [1 * 8])   -> KWPADInvertsKWPAE (\x -> x + 1) (\x -> x - 1) P
+ * :prove \(P : [2 * 8])   -> KWPADInvertsKWPAE (\x -> x + 1) (\x -> x - 1) P
+ * :prove \(P : [3 * 8])   -> KWPADInvertsKWPAE (\x -> x + 1) (\x -> x - 1) P
+ * :prove \(P : [100 * 8]) -> KWPADInvertsKWPAE (\x -> x + 1) (\x -> x - 1) P
+ * ```
+ */
+KWPADInvertsKWPAE :
+    { k, n }
+    ( 1 <= k, k < 2^^32
+    , 2 <= n, n == 1 + k /^ 8
+    )
+ => ([128] -> [128]) -> ([128] -> [128]) -> [k * 8] -> Bool
+property KWPADInvertsKWPAE CIPHk CIPHk' P =
+    unwrap (KWPAD`{k, n} CIPHk' (KWPAE`{k, n} CIPHk P)) == P
