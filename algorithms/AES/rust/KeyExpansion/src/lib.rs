@@ -62,7 +62,7 @@ pub fn key_expansion(k: usize, key: &[Word]) -> [Block; 15] {
             w[i] = key[i];
         } else if i % nk == 0 {
             w[i] = xorw(w[i - nk], xorw(subword(rotword(w[i - 1])), RCON[i / nk]));
-        } else if (i % nk == 4) & (nk > 6) {
+        } else if (i % nk == 4) && (nk > 6) {
             w[i] = xorw(w[i - nk], subword(w[i - 1]));
         } else {
             w[i] = xorw(w[i - nk], w[i - 1]);
