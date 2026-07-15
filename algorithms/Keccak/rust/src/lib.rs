@@ -19,6 +19,7 @@ type State = [[u64; 5]; 5];
 ///
 /// 3. For all triples (x,y,z) such that `0≤x<5`, `0≤y<5`, and
 ///    `0≤z<w`, let `A'[x,y,z] = A[x,y,z] ⨁ D[x,z]`.
+#[allow(clippy::needless_range_loop)]
 fn theta(A: &mut State) {
     let mut C: [u64; 5] = [0; 5];
     let mut D: [u64; 5] = [0; 5];
@@ -214,8 +215,9 @@ fn absorb(rate_bytes: usize, padded_message: &[u8]) -> State {
 ///
 /// Concatenation of the left-most `r` bits of compositions of
 /// `Keccak-p`.
+#[allow(clippy::needless_range_loop)]
 fn squeeze(rate_bytes: usize, digest_size: usize, mut state: State) -> Vec<u8> {
-    assert!(rate_bytes % 8 == 0, "Rate must be a multiple of 64.");
+    assert!(rate_bytes.is_multiple_of(8), "Rate must be a multiple of 64.");
     let mut hash = Vec::new();
     while hash.len() < digest_size {
         for x in 0..5 {
@@ -257,7 +259,7 @@ pub fn Keccak(capacity: usize, digest_size: usize, message: &[u8]) -> Vec<u8> {
 
     assert!(capacity < B, "Capacity must be less than 1600 bits.");
     assert!(r >= 1, "Rate must be at least 1 bit.");
-    assert!(r % 8 == 0, "Rate must be a multiple of 8.");
+    assert!(r.is_multiple_of(8), "Rate must be a multiple of 8.");
 
     let padded_message = pad10s1(rate_bytes, Vec::from(message));
     let state = absorb(rate_bytes, &padded_message);
