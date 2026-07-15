@@ -1,1 +1,1 @@
-FROM ghcr.io/galoisinc/saw:latest
+FROM ghcr.io/galoisinc/saw:1.3

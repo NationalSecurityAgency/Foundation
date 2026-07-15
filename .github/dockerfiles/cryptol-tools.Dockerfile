@@ -21,8 +21,8 @@ RUN apt-get update \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install SAW and saw-remote-api
-COPY --from=ghcr.io/galoisinc/saw:latest /usr/local/bin /usr/local/bin
-COPY --from=ghcr.io/galoisinc/saw-remote-api:latest /usr/local/bin/saw-remote-api /usr/local/bin/saw-remote-api
+COPY --from=ghcr.io/galoisinc/saw:1.3 /usr/local/bin /usr/local/bin
+COPY --from=ghcr.io/galoisinc/saw-remote-api:1.3 /usr/local/bin/saw-remote-api /usr/local/bin/saw-remote-api
 ENV SAW_SERVER_URL=http://0.0.0.0:36691
 RUN echo 'saw-remote-api --read-only http --host 0.0.0.0 --port 36691 / &' >> /usr/local/bin/start-saw-remote-api-read-only \
  && echo 'saw-remote-api http --host 0.0.0.0 --port 36691 / &' >> /usr/local/bin/start-saw-remote-api \

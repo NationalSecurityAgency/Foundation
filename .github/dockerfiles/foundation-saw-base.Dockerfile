@@ -12,8 +12,8 @@ RUN apt-get update \
     openjdk-11-jdk-headless \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY --from=ghcr.io/galoisinc/saw:latest /usr/local/bin /usr/local/bin
-COPY --from=ghcr.io/galoisinc/saw-remote-api:latest /usr/local/bin/saw-remote-api /usr/local/bin/saw-remote-api
+COPY --from=ghcr.io/galoisinc/saw:1.3 /usr/local/bin /usr/local/bin
+COPY --from=ghcr.io/galoisinc/saw-remote-api:1.3 /usr/local/bin/saw-remote-api /usr/local/bin/saw-remote-api
 
 # Install Python client for SAW in a virtual environment
 ENV VENV_SAW=/opt/venv/saw-remote-api
