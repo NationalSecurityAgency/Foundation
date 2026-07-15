@@ -1,3 +1,3 @@
-FROM ghcr.io/nationalsecurityagency/foundation/foundation-saw-base:latest
+FROM ghcr.io/nationalsecurityagency/foundation/cryptol-remote-api:latest
 
 ADD foundation.tar .
