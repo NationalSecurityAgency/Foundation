@@ -27,7 +27,7 @@ let verify_MixColumnsInverts : TopLevel Theorem =
       do {
         goal_normalize ["InvMixColumnsStep", "MixColumnsStep"];
         use_lemmas [ MixColumnsStepInverts_lemma ];
-        goal_eval; rme;
+        goal_eval; trivial;
       };
   };
 
