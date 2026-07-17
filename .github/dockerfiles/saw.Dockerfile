@@ -1,1 +1,1 @@
-FROM ghcr.io/galoisinc/saw:nightly
+`FROM ghcr.io/galoisinc/saw:latest

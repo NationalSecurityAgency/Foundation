@@ -8,15 +8,13 @@ type _BlockSize  = 512
 type _DigestSize = 256
 type _UpperLimit = 64
 
-_hash = SHA256::hash
-
 import algorithms::SHA2::Notation (ROTR, SHR)
 import algorithms::SHA2::Preprocessing (H0_256)
 import algorithms::SHA2::Functions ( SIGMA_256_0
-                                  , SIGMA_256_1
-                                  , sigma_256_0
-                                  , sigma_256_1
-                                  , K_256)
+                                   , SIGMA_256_1
+                                   , sigma_256_0
+                                   , sigma_256_1
+                                   , K_256)
 
 import algorithms::SHA2::Main as SHA256 where
   type d = 256
@@ -30,3 +28,5 @@ import algorithms::SHA2::Main as SHA256 where
   SIGMA_1 = SIGMA_256_1
   sigma_0 = sigma_256_0
   sigma_1 = sigma_256_1
+
+_hash = SHA256::hash
