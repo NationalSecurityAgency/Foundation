@@ -9,15 +9,13 @@ type _BlockSize  = 1024
 type _DigestSize = 224
 type _UpperLimit = 128
 
-_hash = SHA512_224::hash
-
 import algorithms::SHA2::Notation (ROTR, SHR)
 import algorithms::SHA2::Preprocessing (H0_512_224)
 import algorithms::SHA2::Functions ( SIGMA_512_0
-                                  , SIGMA_512_1
-                                  , sigma_512_0
-                                  , sigma_512_1
-                                  , K_512)
+                                   , SIGMA_512_1
+                                   , sigma_512_0
+                                   , sigma_512_1
+                                   , K_512)
 
 import algorithms::SHA2::Main as SHA512_224 where
   type d = 224
@@ -31,3 +29,5 @@ import algorithms::SHA2::Main as SHA512_224 where
   SIGMA_1 = SIGMA_512_1
   sigma_0 = sigma_512_0
   sigma_1 = sigma_512_1
+
+_hash = SHA512_224::hash

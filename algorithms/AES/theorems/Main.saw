@@ -29,10 +29,8 @@ let verify_EncryptInverts (keySize : Int) : TopLevel Theorem =
 
     proveit {{ EncryptInverts`{keySize} }}
       do {
-        goal_normalize [ "split", "join", "InvCipher", "Cipher" ];
-        print_goal;
+        goal_eval_unint [ "split", "join", "InvCipher", "Cipher" ];
         use_lemmas [ split_join_lemma, CipherInverts_lemma_keySize ];
-        print_goal;
         goal_eval; trivial;
       };
   };

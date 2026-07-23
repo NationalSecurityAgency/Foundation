@@ -63,7 +63,7 @@ The assurance tests (invariants) enforced via GitHub's Continuous Integration sy
 
 ### Cryptol
 
-To execute Cryptol-focused assurance tests during development, first open the [Cryptol Codespace](https://codespaces.new/NationalSecurityAgency/foundation?devcontainer_path=.devcontainer%2Fcryptol-dev%2Fdevcontainer.json). Then, set the `CRYPTOLPATH` environment variable to point to the `foundation` project and start up [`cryptol-remote-api](https://github.com/GaloisInc/cryptol/tree/master/cryptol-remote-api), a JSON RPC server that provides a programmatic interface to Cryptol from general purpose programming languages such as Python.
+To execute Cryptol-focused assurance tests during development, first open the [Cryptol Codespace](https://codespaces.new/NationalSecurityAgency/foundation?devcontainer_path=.devcontainer%2Fcryptol-dev%2Fdevcontainer.json). Then, set the `CRYPTOLPATH` environment variable to point to the `foundation` project and start up [`cryptol-remote-api`](https://github.com/GaloisInc/cryptol/tree/master/cryptol-remote-api), a JSON RPC server that provides a programmatic interface to Cryptol from general purpose programming languages such as Python.
 
 ```console
 $ export CRYPTOLPATH=/workspaces/foundation
