@@ -5,7 +5,6 @@ from saw_client.crucible    import *
 from saw_client.mir         import * 
 from saw_client.proofscript import *
 from saw_client.mir_type    import *
-from saw_client.proofscript import *
 
 def ref_to_fresh(c : Contract, ty : MIRType, name : Optional[str] = None,
                  read_only : bool = False) -> Tuple[FreshVar, SetupVal]:

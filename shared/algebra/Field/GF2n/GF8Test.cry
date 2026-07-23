@@ -6,7 +6,7 @@
 
 module shared::algebra::Field::GF2n::GF8Test where
 
-// Import and instantian a Field for GF2^n elements.
+// Import and instantiate a Field for GF2^n elements.
 
 import shared::algebra::Field::GF2n as GF2n
   where

@@ -268,10 +268,3 @@ pub fn Keccak(capacity: usize, digest_size: usize, message: &[u8]) -> Vec<u8> {
     let state = absorb(rate_bytes, &padded_message);
     squeeze(rate_bytes, digest_size, state)
 }
-
-#[test]
-fn testit() {
-    let message = [1, 2, 3];
-    let result = Keccak(1024, 512 / 8, &message);
-    println!("result = {result:?}");
-}

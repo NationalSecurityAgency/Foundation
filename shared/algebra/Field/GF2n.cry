@@ -14,7 +14,7 @@ parameter
 
 private
 
-  // These line remove circular dependency error.
+  // These lines remove circular dependency errors.
   type _n = n 
   _p = p 
 
