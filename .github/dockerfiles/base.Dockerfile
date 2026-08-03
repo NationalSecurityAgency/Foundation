@@ -39,10 +39,6 @@ RUN apt-get update \
 # Enables Docker starting with systemd
 RUN systemctl enable docker
 
-# Add docker-compose
-RUN curl -L "https://github.com/docker/compose/releases/download/v2.5.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-RUN chmod +x /usr/local/bin/docker-compose
-
 # Make typing unicode characters in the terminal work.
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
