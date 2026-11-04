@@ -13,15 +13,19 @@ import algorithms::SLH_DSA::XMSS as X where
 
 parameter
 
+  /** The security parameter which is the byte length of each hash value. */
   type n : #
   type constraint (fin n, n >= 16, n <= 32)
 
+  /** The byte length of the message digest the message hash produces. */
   type m : #
   type constraint (fin m, m >= 1)
 
+  /** The height of each XMSS tree within one hypertree layer. */
   type hp : #
   type constraint (fin hp, hp >= 1, hp <= 20)
 
+  /** The number of hypertree layers. */
   type d : #
   type constraint (fin d, d >= 1, d <= 22)
 
@@ -41,9 +45,12 @@ type TreeW = 96
 /** A hypertree signature. It holds one XMSS signature for each layer. */
 type HtSig = [d]X::XmssSig
 
-/** The first len indices as machine words. */
-ixs : {len} (fin len) => [len][IdxW]
-ixs = take [0 ...]
+/**
+ * The indices zero up to len as machine words. The bound keeps len
+ * within the index width so the values never wrap and repeat.
+ */
+ixs : {len} (fin len, len <= 2 ^^ IdxW) => [len][IdxW]
+ixs = [0 ..< len]
 
 /**
  * The chain of tree indices across the layers. Each step up shifts the

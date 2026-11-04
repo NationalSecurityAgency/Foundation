@@ -23,18 +23,23 @@ import algorithms::SLH_DSA::HyperTree as HT where
 
 parameter
 
+  /** The security parameter which is the byte length of each hash value. */
   type n : #
   type constraint (fin n, n >= 16, n <= 32)
 
+  /** The number of FORS trees. */
   type k : #
   type constraint (fin k, k >= 1, width k <= 32)
 
+  /** The height of each FORS tree so each has two to the power a leaves. */
   type a : #
   type constraint (fin a, a >= 1, a <= 20)
 
+  /** The height of each XMSS tree within one hypertree layer. */
   type hp : #
   type constraint (fin hp, hp >= 1, hp <= 20)
 
+  /** The number of hypertree layers. */
   type d : #
   type constraint (fin d, d >= 1, d <= 22)
 

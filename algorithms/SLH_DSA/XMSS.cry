@@ -15,12 +15,15 @@ import algorithms::SLH_DSA::WOTS as W where
 
 parameter
 
+  /** The security parameter which is the byte length of each hash value. */
   type n : #
   type constraint (fin n, n >= 16, n <= 32)
 
+  /** The byte length of the message digest the message hash produces. */
   type m : #
   type constraint (fin m, m >= 1)
 
+  /** The height of each XMSS tree within one hypertree layer. */
   type hp : #
   type constraint (fin hp, hp >= 1, hp <= 20)
 
@@ -45,9 +48,12 @@ type IdxW = 32
  */
 type XmssSig = { wots : [WLen]NBytes, auth : [hp]NBytes }
 
-/** The first len indices as machine words. */
-ixs : {len} (fin len) => [len][IdxW]
-ixs = take [0 ...]
+/**
+ * The indices zero up to len as machine words. The bound keeps len
+ * within the index width so the values never wrap and repeat.
+ */
+ixs : {len} (fin len, len <= 2 ^^ IdxW) => [len][IdxW]
+ixs = [0 ..< len]
 
 /**
  * Build every level of the XMSS tree. The bottom level is a WOTS plus
@@ -57,13 +63,13 @@ ixs = take [0 ...]
 xmssLevels : NBytes -> NBytes -> ADRS -> [hp + 1][Leaves]NBytes
 xmssLevels skSeed pkSeed adrs = ls
   where
-    leaves = [ W::wots_PKgen skSeed pkSeed (setKeyPairAddress (setTypeAndClear adrs WOTS_HASH) leaf)
-             | leaf <- ixs`{Leaves} ]
+    leaves = parmap leaf (ixs`{Leaves})
+    leaf i = W::wots_PKgen skSeed pkSeed (setKeyPairAddress (setTypeAndClear adrs WOTS_HASH) i)
     ls = [leaves] # [ combine (ls @ lz) (lz + 1) | lz <- ixs`{hp} ]
-    combine prev lz =
-      [ Hash::H pkSeed (setTreeIndex (setTreeHeight (setTypeAndClear adrs TREE) lz) mm)
-                (prev @ ((2 * mm) && mask) # prev @ ((2 * mm + 1) && mask))
-      | mm <- ixs`{Leaves} ]
+    combine prev lz = parmap (node prev lz) (ixs`{Leaves})
+    node prev lz mm =
+      Hash::H pkSeed (setTreeIndex (setTreeHeight (setTypeAndClear adrs TREE) lz) mm)
+              (prev @ ((2 * mm) && mask) # prev @ ((2 * mm + 1) && mask))
       where mask = (`Leaves - 1) : [IdxW]
 
 /** The root of the XMSS tree which serves as its public key. */
