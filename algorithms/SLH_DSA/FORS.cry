@@ -1,0 +1,123 @@
+/*
+ * Description: This module provides the FORS few time signature used by SLH-DSA
+ * [FIPS 205 Section 8].
+ */
+
+module algorithms::SLH_DSA::FORS where
+
+import algorithms::SLH_DSA::Address
+import algorithms::SLH_DSA::HashesShake as Hash where
+  type n = _n
+  type m = _m
+
+parameter
+
+  type n : #
+  type constraint (fin n, n >= 16, n <= 32)
+
+  type m : #
+  type constraint (fin m, m >= 1)
+
+  type k : #
+  type constraint (fin k, k >= 1, width k <= 32)
+
+  type a : #
+  type constraint (fin a, a >= 1, a <= 20)
+
+type _n = n
+type _m = m
+
+/** A string of n bytes. */
+type NBytes = [n][8]
+
+/** The number of leaves in one FORS tree. */
+type Leaves = 2 ^^ a
+
+/** The width of an index as a machine word. */
+type IdxW = 32
+
+/** The number of message digest bytes that FORS consumes. */
+type MsgBytes = (k * a + 7) / 8
+
+/**
+ * One FORS element. It holds the revealed secret value and the
+ * authentication path from that leaf to the tree root.
+ */
+type ForsPair = { sk : NBytes, auth : [a]NBytes }
+
+/** A FORS signature. It holds one element for each of the k trees. */
+type ForsSig = [k]ForsPair
+
+/** The first len indices as machine words. */
+ixs : {len} (fin len) => [len][IdxW]
+ixs = take [0 ...]
+
+/** Derive the FORS secret value at the given leaf index. */
+forsSkGen : NBytes -> NBytes -> ADRS -> [IdxW] -> NBytes
+forsSkGen pkSeed skSeed adrs idx =
+  Hash::PRF pkSeed skSeed
+    (setTreeIndex (setKeyPairAddress (setTypeAndClear adrs FORS_PRF) (getKeyPairAddress adrs)) idx)
+
+/**
+ * Build every level of one FORS tree. The bottom level hashes each
+ * secret into a leaf and each higher level joins the two nodes below
+ * it. The entry at index t selects which of the k trees is built.
+ */
+forsLevels : NBytes -> NBytes -> ADRS -> [IdxW] -> [a + 1][Leaves]NBytes
+forsLevels pkSeed skSeed adrs t = ls
+  where
+    base = t << (`a : [IdxW])
+    leaves = [ Hash::F pkSeed (setTreeIndex (setTreeHeight adrs 0) (base + kk)) (forsSkGen pkSeed skSeed adrs (base + kk))
+             | kk <- ixs`{Leaves} ]
+    ls = [leaves] # [ combine (ls @ lz) (lz + 1) | lz <- ixs`{a} ]
+    combine prev lz =
+      [ Hash::H pkSeed (setTreeIndex (setTreeHeight adrs lz) ((t << ((`a : [IdxW]) - lz)) + mm))
+                (prev @ ((2 * mm) && mask) # prev @ ((2 * mm + 1) && mask))
+      | mm <- ixs`{Leaves} ]
+      where mask = (`Leaves - 1) : [IdxW]
+
+/** Split the message digest into k indices of a bits each. */
+forsIndices : [MsgBytes][8] -> [k][a]
+forsIndices digest = split (take`{k * a} (join digest))
+
+/**
+ * Sign a message digest. For each of the k trees reveal the secret at
+ * the chosen leaf and the authentication path up to its root.
+ */
+forsSign : [MsgBytes][8] -> NBytes -> NBytes -> ADRS -> ForsSig
+forsSign digest skSeed pkSeed adrs =
+  [ { sk = forsSkGen pkSeed skSeed adrs ((i << (`a : [IdxW])) + (zext idxI : [IdxW]))
+    , auth = [ (forsLevels pkSeed skSeed adrs i) @ j @ (((zext idxI : [IdxW]) >> j) ^ 1)
+             | j <- ixs`{a} ] }
+  | i <- ixs`{k}
+  | idxI <- forsIndices digest ]
+
+/** Generate the FORS public key by compressing the k tree roots. */
+forsPkGen : NBytes -> NBytes -> ADRS -> NBytes
+forsPkGen pkSeed skSeed adrs = Hash::T_l pkSeed rootsAdrs (join roots)
+  where
+    rootsAdrs = setKeyPairAddress (setTypeAndClear adrs FORS_ROOTS) (getKeyPairAddress adrs)
+    roots = [ (forsLevels pkSeed skSeed adrs i) @ (`a : [IdxW]) @ (0 : [IdxW]) | i <- ixs`{k} ]
+
+/**
+ * Recover the FORS public key from a signature and its message digest.
+ * For each tree walk from the revealed secret up its authentication
+ * path to a root then compress the k roots.
+ */
+forsPkFromSig : ForsSig -> [MsgBytes][8] -> NBytes -> ADRS -> NBytes
+forsPkFromSig sig digest pkSeed adrs = Hash::T_l pkSeed rootsAdrs (join roots)
+  where
+    rootsAdrs = setKeyPairAddress (setTypeAndClear adrs FORS_ROOTS) (getKeyPairAddress adrs)
+    roots = [ rootFromPair pair idxI i
+            | pair <- sig
+            | idxI <- forsIndices digest
+            | i <- ixs`{k} ]
+    rootFromPair pair idxI i = node
+      where
+        ti0 = (i << (`a : [IdxW])) + (zext idxI : [IdxW])
+        node0 = Hash::F pkSeed (setTreeIndex (setTreeHeight adrs 0) ti0) pair.sk
+        (node, _) = foldl step (node0, ti0) (zip (ixs`{a}) pair.auth)
+        step (nd, ti) (j, authj) =
+          if (((zext idxI : [IdxW]) >> j) && 1) == (0 : [IdxW])
+            then (Hash::H pkSeed (setTreeIndex (setTreeHeight adrs (j + 1)) (ti >> 1)) (nd # authj), ti >> 1)
+            else (Hash::H pkSeed (setTreeIndex (setTreeHeight adrs (j + 1)) ((ti - 1) >> 1)) (authj # nd), (ti - 1) >> 1)

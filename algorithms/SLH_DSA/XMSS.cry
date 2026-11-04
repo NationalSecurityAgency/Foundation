@@ -1,0 +1,94 @@
+/*
+ * Description: This module provides the XMSS signature used by SLH-DSA [FIPS 205
+ * Section 6], a Merkle tree over WOTS+ public keys.
+ */
+
+module algorithms::SLH_DSA::XMSS where
+
+import algorithms::SLH_DSA::Address
+import algorithms::SLH_DSA::HashesShake as Hash where
+  type n = _n
+  type m = _m
+import algorithms::SLH_DSA::WOTS as W where
+  type n = _n
+  type m = _m
+
+parameter
+
+  type n : #
+  type constraint (fin n, n >= 16, n <= 32)
+
+  type m : #
+  type constraint (fin m, m >= 1)
+
+  type hp : #
+  type constraint (fin hp, hp >= 1, hp <= 20)
+
+type _n = n
+type _m = m
+
+/** A string of n bytes. */
+type NBytes = [n][8]
+
+/** The number of n byte values in one WOTS plus signature. */
+type WLen = 2 * n + 3
+
+/** The number of leaves in one XMSS tree. */
+type Leaves = 2 ^^ hp
+
+/** The width of an index as a machine word. */
+type IdxW = 32
+
+/**
+ * An XMSS signature. It holds the WOTS plus signature at the chosen
+ * leaf and the authentication path from that leaf to the root.
+ */
+type XmssSig = { wots : [WLen]NBytes, auth : [hp]NBytes }
+
+/** The first len indices as machine words. */
+ixs : {len} (fin len) => [len][IdxW]
+ixs = take [0 ...]
+
+/**
+ * Build every level of the XMSS tree. The bottom level is a WOTS plus
+ * public key at each leaf and each higher level joins the two nodes
+ * below it.
+ */
+xmssLevels : NBytes -> NBytes -> ADRS -> [hp + 1][Leaves]NBytes
+xmssLevels skSeed pkSeed adrs = ls
+  where
+    leaves = [ W::wots_PKgen skSeed pkSeed (setKeyPairAddress (setTypeAndClear adrs WOTS_HASH) leaf)
+             | leaf <- ixs`{Leaves} ]
+    ls = [leaves] # [ combine (ls @ lz) (lz + 1) | lz <- ixs`{hp} ]
+    combine prev lz =
+      [ Hash::H pkSeed (setTreeIndex (setTreeHeight (setTypeAndClear adrs TREE) lz) mm)
+                (prev @ ((2 * mm) && mask) # prev @ ((2 * mm + 1) && mask))
+      | mm <- ixs`{Leaves} ]
+      where mask = (`Leaves - 1) : [IdxW]
+
+/** The root of the XMSS tree which serves as its public key. */
+xmssRoot : NBytes -> NBytes -> ADRS -> NBytes
+xmssRoot skSeed pkSeed adrs = (xmssLevels skSeed pkSeed adrs) @ (`hp : [IdxW]) @ (0 : [IdxW])
+
+/**
+ * Sign a message at the given leaf. Reveal the WOTS plus signature at
+ * that leaf and the authentication path up to the root.
+ */
+xmssSign : NBytes -> NBytes -> NBytes -> ADRS -> [IdxW] -> XmssSig
+xmssSign msg skSeed pkSeed adrs idx =
+  { wots = W::wots_sign msg skSeed pkSeed (setKeyPairAddress (setTypeAndClear adrs WOTS_HASH) idx)
+  , auth = [ (xmssLevels skSeed pkSeed adrs) @ j @ ((idx >> j) ^ 1) | j <- ixs`{hp} ] }
+
+/**
+ * Recover the XMSS root from a signature its leaf index and its
+ * message. Rebuild the leaf then follow the authentication path up.
+ */
+xmssPkFromSig : [IdxW] -> XmssSig -> NBytes -> NBytes -> ADRS -> NBytes
+xmssPkFromSig idx sig msg pkSeed adrs = node
+  where
+    pk0 = W::wots_PKFromSig sig.wots msg pkSeed (setKeyPairAddress (setTypeAndClear adrs WOTS_HASH) idx)
+    (node, _) = foldl step (pk0, idx) (zip (ixs`{hp}) sig.auth)
+    step (nd, ti) (j, authj) =
+      if ((idx >> j) && 1) == (0 : [IdxW])
+        then (Hash::H pkSeed (setTreeIndex (setTreeHeight (setTypeAndClear adrs TREE) (j + 1)) (ti >> 1)) (nd # authj), ti >> 1)
+        else (Hash::H pkSeed (setTreeIndex (setTreeHeight (setTypeAndClear adrs TREE) (j + 1)) ((ti - 1) >> 1)) (authj # nd), (ti - 1) >> 1)

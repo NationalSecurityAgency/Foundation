@@ -1,0 +1,99 @@
+/*
+ * Description: This module provides the SLH-DSA hypertree [FIPS 205 Section 7],
+ * the composition of XMSS across d layers.
+ */
+
+module algorithms::SLH_DSA::HyperTree where
+
+import algorithms::SLH_DSA::Address
+import algorithms::SLH_DSA::XMSS as X where
+  type n = _n
+  type m = _m
+  type hp = _hp
+
+parameter
+
+  type n : #
+  type constraint (fin n, n >= 16, n <= 32)
+
+  type m : #
+  type constraint (fin m, m >= 1)
+
+  type hp : #
+  type constraint (fin hp, hp >= 1, hp <= 20)
+
+  type d : #
+  type constraint (fin d, d >= 1, d <= 22)
+
+type _n = n
+type _m = m
+type _hp = hp
+
+/** A string of n bytes. */
+type NBytes = [n][8]
+
+/** The width of an index as a machine word. */
+type IdxW = 32
+
+/** The width of a tree index across the hypertree. */
+type TreeW = 96
+
+/** A hypertree signature. It holds one XMSS signature for each layer. */
+type HtSig = [d]X::XmssSig
+
+/** The first len indices as machine words. */
+ixs : {len} (fin len) => [len][IdxW]
+ixs = take [0 ...]
+
+/**
+ * The chain of tree indices across the layers. Each step up shifts the
+ * index right by hp bits to name the tree one layer higher.
+ */
+idxTreeChain : [TreeW] -> [d][TreeW]
+idxTreeChain idxTree = take ([idxTree] # [ it >> (`hp : [TreeW]) | it <- idxTreeChain idxTree ])
+
+/** The address used at each layer for the given starting tree index. */
+htAddrs : [TreeW] -> [d]ADRS
+htAddrs idxTree =
+  [ setTreeAddress (setLayerAddress zero j) (chain @ j) | j <- ixs`{d} ]
+  where chain = idxTreeChain idxTree
+
+/**
+ * The leaf index used at each layer. The bottom layer uses the given
+ * leaf and each higher layer uses the low hp bits of its tree index.
+ */
+htLeaves : [TreeW] -> [IdxW] -> [d][IdxW]
+htLeaves idxTree idxLeaf =
+  [idxLeaf] # [ drop`{TreeW - IdxW} ((chain @ j) && mask) | j <- ixs`{d - 1} ]
+  where
+    chain = idxTreeChain idxTree
+    mask = (2 ^^ (`hp : [TreeW])) - 1
+
+/**
+ * Sign a message across the layers. The bottom layer signs the message
+ * and each higher layer signs the root of the layer below it.
+ */
+htSign : NBytes -> NBytes -> NBytes -> [TreeW] -> [IdxW] -> HtSig
+htSign msg skSeed pkSeed idxTree idxLeaf = sigs
+  where
+    addrs = htAddrs idxTree
+    leaves = htLeaves idxTree idxLeaf
+    roots = [msg] # [ X::xmssRoot skSeed pkSeed (addrs @ j) | j <- ixs`{d - 1} ]
+    sigs = [ X::xmssSign (roots @ j) skSeed pkSeed (addrs @ j) (leaves @ j) | j <- ixs`{d} ]
+
+/** The root of the top tree which serves as the hypertree public key. */
+htRoot : NBytes -> NBytes -> [TreeW] -> NBytes
+htRoot skSeed pkSeed idxTree = X::xmssRoot skSeed pkSeed ((htAddrs idxTree) @ (`d - 1 : [IdxW]))
+
+/**
+ * Verify a hypertree signature. Rebuild the root one layer at a time
+ * and check that the top layer matches the public root.
+ */
+htVerify : NBytes -> NBytes -> HtSig -> [TreeW] -> [IdxW] -> NBytes -> Bit
+htVerify msg pkSeed sigs idxTree idxLeaf rootPk = (nodes @ (`d - 1 : [IdxW])) == rootPk
+  where
+    addrs = htAddrs idxTree
+    leaves = htLeaves idxTree idxLeaf
+    nodes = [ X::xmssPkFromSig (leaves @ 0) (sigs @ 0) msg pkSeed (addrs @ 0) ] #
+            [ X::xmssPkFromSig (leaves @ (j + 1)) (sigs @ (j + 1)) (nodes @ j) pkSeed (addrs @ (j + 1))
+            | j <- ixs`{d - 1} ]

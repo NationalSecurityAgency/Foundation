@@ -1,0 +1,67 @@
+/*
+ * Description: These properties check that an SLH-DSA signature
+ * recovers the signer's public key, at the WOTS+ layer [FIPS 205
+ * Section 5], the FORS layer [FIPS 205 Section 8], the XMSS layer
+ * [FIPS 205 Section 6], and for the whole scheme [FIPS 205 Section 9].
+ */
+
+module algorithms::SLH_DSA::tests::Consistency where
+
+import algorithms::SLH_DSA::Address (setKeyPairAddress)
+
+import algorithms::SLH_DSA::WOTS as W where
+  type n = 16
+  type m = 30
+
+import algorithms::SLH_DSA::FORS as FR where
+  type n = 16
+  type m = 30
+  type k = 2
+  type a = 2
+
+import algorithms::SLH_DSA::XMSS as X where
+  type n = 16
+  type m = 30
+  type hp = 2
+
+import algorithms::SLH_DSA::Main as S where
+  type n = 16
+  type k = 2
+  type a = 2
+  type hp = 2
+  type d = 2
+
+sk : [16][8]
+sk = repeat 0x11
+pk : [16][8]
+pk = repeat 0x22
+prf : [16][8]
+prf = repeat 0x33
+
+/** A WOTS+ signature recovers the WOTS+ public key. */
+property wots_recovers =
+  W::wots_PKFromSig (W::wots_sign msg sk pk adrs) msg pk adrs == W::wots_PKgen sk pk adrs
+  where
+    msg = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    adrs = setKeyPairAddress zero 7
+
+/** A FORS signature recovers the FORS public key. */
+property fors_recovers =
+  FR::forsPkFromSig (FR::forsSign digest sk pk adrs) digest pk adrs == FR::forsPkGen pk sk adrs
+  where
+    digest = [0xA5]
+    adrs = setKeyPairAddress zero 3
+
+/** An XMSS signature recovers the XMSS root. */
+property xmss_recovers =
+  X::xmssPkFromSig idx (X::xmssSign msg sk pk zero idx) msg pk zero == X::xmssRoot sk pk zero
+  where
+    msg = repeat 0xAB
+    idx = 2
+
+/** Verification accepts a genuine SLH-DSA signature. */
+property slh_verifies =
+  S::slhVerify pk root msg (S::slhSign sk prf pk root msg)
+  where
+    msg = [0xDE, 0xAD, 0xBE, 0xEF]
+    root = S::pkRoot sk pk
