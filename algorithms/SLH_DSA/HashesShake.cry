@@ -1,12 +1,14 @@
 /*
  * Description: This module provides a Cryptol specification for the SLH-DSA
- * hash functions instantiated with SHAKE [FIPS 205 Section 11.2].
- * Each function is SHAKE256 over a fixed input ordering.
+ * hash functions instantiated with SHAKE [FIPS 205 Section 11.1].
+ * Each function is SHAKE256 over a fixed input ordering. The inputs and
+ * output of every function are byte strings [FIPS 205 Section 4.1].
  */
 
 module algorithms::SLH_DSA::HashesShake where
 
 import algorithms::SHAKE::Main (SHAKE256)
+import algorithms::SLH_DSA::Address (ADRS)
 
 parameter
 
@@ -17,9 +19,6 @@ parameter
   /** The byte length of the message digest the message hash produces. */
   type m : #
   type constraint (fin m, m >= 1)
-
-/** The address structure passed to each tweakable hash. */
-type ADRS = [32][8]
 
 /** A string of n bytes, the security parameter width of the scheme. */
 type NBytes = [n][8]
