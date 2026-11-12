@@ -1,0 +1,82 @@
+/*
+ * Description: This module provides the SLH-DSA address structure ADRS and
+ * its member functions [FIPS 205 Section 4.2 "Addresses" and Section 4.3].
+ */
+
+module algorithms::SLH_DSA::Address where
+
+import algorithms::SLH_DSA::Utils (toInt, toByte)
+
+/**
+ * An address is the thirty two byte structure that names the exact
+ * place a hash call sits inside the scheme. Every tweakable hash takes
+ * one so that no two calls share an input.
+ */
+type ADRS = [32][8]
+
+/** The address type for a hash step inside a WOTS plus chain. */
+WOTS_HASH  = 0 : [32]
+
+/** The address type for the compression of a WOTS plus public key. */
+WOTS_PK    = 1 : [32]
+
+/** The address type for a node of a main Merkle tree. */
+TREE       = 2 : [32]
+
+/** The address type for a node of a FORS tree. */
+FORS_TREE  = 3 : [32]
+
+/** The address type for the compression of the FORS tree roots. */
+FORS_ROOTS = 4 : [32]
+
+/** The address type for the generation of a WOTS plus secret value. */
+WOTS_PRF   = 5 : [32]
+
+/** The address type for the generation of a FORS secret value. */
+FORS_PRF   = 6 : [32]
+
+/** Set the layer address to the given layer and keep the rest. */
+setLayerAddress : ADRS -> [32] -> ADRS
+setLayerAddress adrs l = toByte`{4} l # (adrs @@ [4 ..< 32])
+
+/** Set the tree address to the given ninety six bit tree index. */
+setTreeAddress : ADRS -> [96] -> ADRS
+setTreeAddress adrs t = (adrs @@ [0 ..< 4]) # toByte`{12} t # (adrs @@ [16 ..< 32])
+
+/** Set the type field to the given type and clear the final twelve bytes. */
+setTypeAndClear : ADRS -> [32] -> ADRS
+setTypeAndClear adrs y = (adrs @@ [0 ..< 16]) # toByte`{4} y # (zero : [12][8])
+
+/** Set the key pair address to the given index and keep the rest. */
+setKeyPairAddress : ADRS -> [32] -> ADRS
+setKeyPairAddress adrs i = (adrs @@ [0 ..< 20]) # toByte`{4} i # (adrs @@ [24 ..< 32])
+
+/** Read the key pair address back out of an address. */
+getKeyPairAddress : ADRS -> [32]
+getKeyPairAddress adrs = toInt`{4} (adrs @@ [20 ..< 24])
+
+/** Set the chain address to the given index and keep the rest. */
+setChainAddress : ADRS -> [32] -> ADRS
+setChainAddress adrs i = (adrs @@ [0 ..< 24]) # toByte`{4} i # (adrs @@ [28 ..< 32])
+
+/**
+ * Set the tree height to the given height. The tree height shares the
+ * same field as the chain address.
+ */
+setTreeHeight : ADRS -> [32] -> ADRS
+setTreeHeight = setChainAddress
+
+/** Set the hash address to the given index and keep the rest. */
+setHashAddress : ADRS -> [32] -> ADRS
+setHashAddress adrs i = (adrs @@ [0 ..< 28]) # toByte`{4} i
+
+/**
+ * Set the tree index to the given index. The tree index shares the
+ * same field as the hash address.
+ */
+setTreeIndex : ADRS -> [32] -> ADRS
+setTreeIndex = setHashAddress
+
+/** Read the tree index back out of an address. */
+getTreeIndex : ADRS -> [32]
+getTreeIndex adrs = toInt`{4} (adrs @@ [28 ..< 32])

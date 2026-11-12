@@ -1,0 +1,77 @@
+/*
+ * Description: This module provides a Cryptol specification for the SLH-DSA
+ * hash functions instantiated with SHAKE [FIPS 205 Section 11.1].
+ * Each function is SHAKE256 over a fixed input ordering. The inputs and
+ * output of every function are byte strings [FIPS 205 Section 4.1].
+ */
+
+module algorithms::SLH_DSA::HashesShake where
+
+import algorithms::SHAKE::Main (SHAKE256)
+import algorithms::SLH_DSA::Address (ADRS)
+
+parameter
+
+  /** The security parameter which is the byte length of each hash value. */
+  type n : #
+  type constraint (fin n, n >= 16)
+
+  /** The byte length of the message digest the message hash produces. */
+  type m : #
+  type constraint (fin m, m >= 1)
+
+/** A string of n bytes, the security parameter width of the scheme. */
+type NBytes = [n][8]
+
+/** The n byte output shared by the tweakable hashes. */
+type NOut = [n][8]
+
+private
+  /**
+   * Run SHAKE256 over the joined input bytes and return the requested
+   * number of output bytes.
+   */
+  shake : {out, in} (fin out, fin in) => [in][8] -> [out][8]
+  shake bytes = split (SHAKE256`{out * 8} (join bytes))
+
+/**
+ * The pseudorandom function that derives a secret value from the
+ * public seed the secret seed and an address.
+ */
+PRF : NBytes -> NBytes -> ADRS -> NOut
+PRF pkSeed skSeed adrs = shake (pkSeed # adrs # skSeed)
+
+/**
+ * The pseudorandom function that derives the message randomizer from
+ * the secret prf value an optional random value and the message.
+ */
+PRF_msg : {msg} (fin msg) => NBytes -> NBytes -> [msg][8] -> NOut
+PRF_msg skPrf optRand msg = shake (skPrf # optRand # msg)
+
+/**
+ * The message hash that maps the randomizer the public seed the public
+ * root and the message to the message digest.
+ */
+H_msg : {msg} (fin msg) => NBytes -> NBytes -> NBytes -> [msg][8] -> [m][8]
+H_msg r pkSeed pkRoot msg = shake (r # pkSeed # pkRoot # msg)
+
+/**
+ * The tweakable hash for a single n byte input. It takes one step
+ * along a WOTS plus chain.
+ */
+F : NBytes -> ADRS -> NBytes -> NOut
+F pkSeed adrs m1 = shake (pkSeed # adrs # m1)
+
+/**
+ * The tweakable hash for a two n byte input. It joins two child nodes
+ * into their parent.
+ */
+H : NBytes -> ADRS -> [2 * n][8] -> NOut
+H pkSeed adrs m2 = shake (pkSeed # adrs # m2)
+
+/**
+ * The tweakable hash for a variable length input. It compresses a list
+ * of values into one n byte value.
+ */
+T_l : {l} (fin l) => NBytes -> ADRS -> [l * n][8] -> NOut
+T_l pkSeed adrs ml = shake (pkSeed # adrs # ml)

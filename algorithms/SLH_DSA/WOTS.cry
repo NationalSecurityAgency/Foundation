@@ -1,0 +1,119 @@
+/*
+ * Description: This module provides the WOTS+ one time signature used by SLH-DSA
+ * [FIPS 205 Section 5]. The Winternitz parameter is 16, so lg_w is 4
+ * and len2 is 3 for every SLH-DSA parameter set.
+ */
+
+module algorithms::SLH_DSA::WOTS where
+
+import algorithms::SLH_DSA::Address
+import algorithms::SLH_DSA::HashesShake as Hash where
+  type n = _n
+  type m = _m
+
+parameter
+
+  /** The security parameter which is the byte length of each hash value. */
+  type n : #
+  type constraint (fin n, n >= 16, n <= 32)
+
+  /** The byte length of the message digest the message hash produces. */
+  type m : #
+  type constraint (fin m, m >= 1)
+
+type _n = n
+type _m = m
+
+/** The Winternitz parameter. Every chain has w steps. */
+type w = 16
+
+/** The base two logarithm of the Winternitz parameter. */
+type lg_w = 4
+
+/** The number of message digits in one WOTS plus key. */
+type len1 = 2 * n
+
+/** The number of checksum digits in one WOTS plus key. */
+type len2 = 3
+
+/** The total number of chains in one WOTS plus key. */
+type len = len1 + len2
+
+/** A string of n bytes. */
+type NBytes = [n][8]
+
+/**
+ * Walk a WOTS plus chain. Start from the value x at chain index i and
+ * apply the hash s times under the given address.
+ */
+chain : NBytes -> [32] -> [32] -> NBytes -> ADRS -> NBytes
+chain x i s pkSeed adrs = vs @ s
+  where
+    vs = [x] # [ Hash::F pkSeed (setHashAddress adrs (i + j)) v
+               | v <- vs
+               | j <- [0 .. (w - 2)] ]
+
+private
+  /** Split a message into its base w digits. */
+  msgDigits : NBytes -> [len1][lg_w]
+  msgDigits msg = split (join msg)
+
+  /**
+   * Compute the checksum digits. The checksum stops a signer from
+   * walking any single chain further than the message allows.
+   */
+  checksumDigits : [len1][lg_w] -> [len2][lg_w]
+  checksumDigits ds = take`{len2} (split shifted)
+    where
+      csum : [32]
+      csum = sum [ (`w - 1) - (zext d) | d <- ds ]
+      shifted = drop (csum << 4) : [16]
+
+  /** The message digits followed by the checksum digits. */
+  allDigits : NBytes -> [len][lg_w]
+  allDigits msg = ds # checksumDigits ds
+    where ds = msgDigits msg
+
+/**
+ * Generate a WOTS plus public key from the secret seed the public seed
+ * and an address. Each chain is walked to its final step and the ends
+ * are compressed into one value.
+ */
+wots_PKgen : NBytes -> NBytes -> ADRS -> NBytes
+wots_PKgen skSeed pkSeed adrs = pk
+  where
+    skAdrs0 = setKeyPairAddress (setTypeAndClear adrs WOTS_PRF) (getKeyPairAddress adrs)
+    tmp = [ chain sk 0 (`w - 1) pkSeed (setChainAddress adrs i)
+          | i <- [0 .. (len - 1)]
+          | sk <- sks ]
+    sks = [ Hash::PRF pkSeed skSeed (setChainAddress skAdrs0 i) | i <- [0 .. (len - 1)] ]
+    wotspkAdrs = setKeyPairAddress (setTypeAndClear adrs WOTS_PK) (getKeyPairAddress adrs)
+    pk = Hash::T_l pkSeed wotspkAdrs (join tmp)
+
+/**
+ * Sign a message with a WOTS plus key. Each digit fixes how far along
+ * its own chain the signature value sits.
+ */
+wots_sign : NBytes -> NBytes -> NBytes -> ADRS -> [len]NBytes
+wots_sign msg skSeed pkSeed adrs = sig
+  where
+    skAdrs0 = setKeyPairAddress (setTypeAndClear adrs WOTS_PRF) (getKeyPairAddress adrs)
+    sks = [ Hash::PRF pkSeed skSeed (setChainAddress skAdrs0 i) | i <- [0 .. (len - 1)] ]
+    sig = [ chain sk 0 (zext d) pkSeed (setChainAddress adrs i)
+          | i <- [0 .. (len - 1)]
+          | sk <- sks
+          | d <- allDigits msg ]
+
+/**
+ * Recover the WOTS plus public key from a signature and its message.
+ * Each chain is walked from the signature value to its final step.
+ */
+wots_PKFromSig : [len]NBytes -> NBytes -> NBytes -> ADRS -> NBytes
+wots_PKFromSig sig msg pkSeed adrs = pk
+  where
+    tmp = [ chain s (zext d) ((`w - 1) - (zext d)) pkSeed (setChainAddress adrs i)
+          | i <- [0 .. (len - 1)]
+          | s <- sig
+          | d <- allDigits msg ]
+    wotspkAdrs = setKeyPairAddress (setTypeAndClear adrs WOTS_PK) (getKeyPairAddress adrs)
+    pk = Hash::T_l pkSeed wotspkAdrs (join tmp)

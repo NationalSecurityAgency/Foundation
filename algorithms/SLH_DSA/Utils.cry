@@ -1,0 +1,36 @@
+/*
+ * Description: This module provides the integer to byte string and byte
+ * string to integer conversion helpers shared across the SLH-DSA
+ * specification [FIPS 205 Section 4.4].
+ */
+
+module algorithms::SLH_DSA::Utils where
+
+/** Converts a byte string to an integer [FIPS 205 Section 4.4]. */
+toInt : {n, a} (fin n, a <= n*8) => [n][8] -> [a]
+toInt X = drop (join X)
+
+/** Converts an integer to a byte string [FIPS 205 Section 4.4]. */
+toByte : {n, a} (fin n, a <= n*8) => [a] -> [n][8]
+toByte x = split (zext x)
+
+/**
+ * This property demonstrates that `toInt` is the inverse of `toByte`.
+ *
+ * ```
+ * :prove toIntInvertstoByte`{n=0, a=0}
+ * :prove toIntInvertstoByte`{n=1, a=0}
+ * :prove toIntInvertstoByte`{n=1, a=1}
+ * :prove toIntInvertstoByte`{n=1, a=2}
+ * :prove toIntInvertstoByte`{n=1, a=3}
+ * :prove toIntInvertstoByte`{n=1, a=4}
+ * :prove toIntInvertstoByte`{n=1, a=5}
+ * :prove toIntInvertstoByte`{n=1, a=6}
+ * :prove toIntInvertstoByte`{n=1, a=7}
+ * :prove toIntInvertstoByte`{n=1, a=8}
+ * :prove toIntInvertstoByte`{n=4, a=32}
+ * :prove toIntInvertstoByte`{n=8, a=64}
+ * ```
+ */
+toIntInvertstoByte : {n, a} (fin n, a <= n*8) => [a] -> Bit
+property toIntInvertstoByte x = toInt`{n, a} (toByte`{n, a} x) == x

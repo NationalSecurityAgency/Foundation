@@ -1,0 +1,55 @@
+/*
+ * Description: These properties check that SLH-DSA verification rejects
+ * input that does not match. They confirm the recovery proofs in
+ * Consistency are not vacuous, at the WOTS+ layer [FIPS 205 Section 5]
+ * and for the whole scheme [FIPS 205 Section 9].
+ */
+
+module algorithms::SLH_DSA::tests::Negative where
+
+import algorithms::SLH_DSA::Address (setKeyPairAddress)
+
+import algorithms::SLH_DSA::WOTS as W where
+  type n = 16
+  type m = 30
+
+import algorithms::SLH_DSA::Main as S where
+  type n = 16
+  type k = 2
+  type a = 2
+  type hp = 2
+  type d = 2
+
+/** A fixed secret seed for the tests. */
+sk : [16][8]
+sk = repeat 0x11
+
+/** A fixed public seed for the tests. */
+pk : [16][8]
+pk = repeat 0x22
+
+/** A fixed secret prf value for the tests. */
+prf : [16][8]
+prf = repeat 0x33
+
+/**
+ * A WOTS plus signature over one message does not recover the public
+ * key under a different message.
+ */
+property wots_rejects_a_wrong_message =
+  W::wots_PKFromSig (W::wots_sign msg sk pk adrs) other pk adrs != W::wots_PKgen sk pk adrs
+  where
+    msg   = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    other = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 99]
+    adrs  = setKeyPairAddress zero 7
+
+/**
+ * Verification rejects a genuine signature checked against a wrong
+ * message.
+ */
+property slh_rejects_a_wrong_message =
+  ~ (S::slhVerify pk root other (S::slhSign sk prf pk root msg))
+  where
+    msg   = [0xDE, 0xAD, 0xBE, 0xEF]
+    other = [0xDE, 0xAD, 0xBE, 0xEE]
+    root  = S::pkRoot sk pk

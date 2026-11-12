@@ -1,0 +1,52 @@
+/*
+ * Description: This module checks the SLH-DSA hash functions for the
+ * SHAKE parameter sets against direct SHAKE256 computations
+ * [FIPS 205 Section 11.2].
+ */
+
+module algorithms::SLH_DSA::tests::HashesShake where
+
+import algorithms::SLH_DSA::HashesShake as H where
+  type n = 16
+  type m = 30
+
+pkSeed : [16][8]
+pkSeed = repeat 0x22
+
+adrs : [32][8]
+adrs = [0 .. 31]
+
+skSeed : [16][8]
+skSeed = repeat 0x11
+
+/** F is SHAKE256 of the public seed the address and one block. */
+property F_vector =
+  join (H::F pkSeed adrs (repeat 0x01)) == 0x466f5e8f76cfec1e4418720b6927c107
+
+/** PRF is SHAKE256 of the public seed the address and the secret seed. */
+property PRF_vector =
+  join (H::PRF pkSeed skSeed adrs) == 0x2006f572c763046b6e1ee2bae34c90dc
+
+/** H is SHAKE256 of the public seed the address and two blocks. */
+property H_vector =
+  join (H::H pkSeed adrs (repeat 0x05)) == 0x4b6b522d4999781e882e0631a1e6fe8f
+
+/**
+ * H_msg is SHAKE256 of the randomizer the public seed the public root
+ * and the message.
+ */
+property Hmsg_vector =
+  join (H::H_msg (repeat 0x44) pkSeed (repeat 0x66) (repeat 0x07 : [10][8]))
+    == 0x12c5bcfbe3f382a054473a84c516c5948054e3a7d5d006e5b2615c1ce026
+
+/**
+ * PRF_msg is SHAKE256 of the secret prf value the optional random value
+ * and the message.
+ */
+property PRFmsg_vector =
+  join (H::PRF_msg (repeat 0x99) (repeat 0x88) (repeat 0x07 : [10][8]))
+    == 0xbdba04f19cabb107c21743d0f12e4a92
+
+/** T_l is SHAKE256 of the public seed the address and l blocks. */
+property Tl_vector =
+  join (H::T_l pkSeed adrs (repeat 0x05 : [48][8])) == 0x3e08bf3a5b7b9902db3de4742c982288

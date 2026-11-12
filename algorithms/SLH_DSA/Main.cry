@@ -1,0 +1,146 @@
+/*
+ * Description: This module provides SLH-DSA key generation, signing and
+ * verification [FIPS 205 Section 9 and Section 10], with the message
+ * digest split into the FORS message, the tree index and the leaf index.
+ */
+
+module algorithms::SLH_DSA::Main where
+
+import algorithms::SLH_DSA::Address
+import algorithms::SLH_DSA::HashesShake as Hash where
+  type n = _n
+  type m = _m
+import algorithms::SLH_DSA::FORS as FR where
+  type n = _n
+  type m = _m
+  type k = _k
+  type a = _a
+import algorithms::SLH_DSA::HyperTree as HT where
+  type n = _n
+  type m = _m
+  type hp = _hp
+  type d = _d
+
+parameter
+
+  /** The security parameter which is the byte length of each hash value. */
+  type n : #
+  type constraint (fin n, n >= 16, n <= 32)
+
+  /** The number of FORS trees. */
+  type k : #
+  type constraint (fin k, k >= 1, width k <= 32)
+
+  /** The height of each FORS tree so each has two to the power a leaves. */
+  type a : #
+  type constraint (fin a, a >= 1, a <= 20)
+
+  /** The height of each XMSS tree within one hypertree layer. */
+  type hp : #
+  type constraint (fin hp, hp >= 1, hp <= 20)
+
+  /** The number of hypertree layers. */
+  type d : #
+  type constraint (fin d, d >= 1, d <= 22)
+
+  type constraint (hp * d <= 68)
+
+type h = hp * d
+type L1 = (k * a + 7) / 8
+type L2 = (h - hp + 7) / 8
+type L3 = (h + 8 * d - 1) / (8 * d)
+type m = L1 + L2 + L3
+
+type _n = n
+type _m = m
+type _k = k
+type _a = a
+type _hp = hp
+type _d = d
+
+/** A string of n bytes. */
+type NBytes = [n][8]
+
+/** The width of a tree index across the hypertree. */
+type TreeW = 96
+
+/** The width of a leaf index as a machine word. */
+type IdxW = 32
+
+/**
+ * An SLH-DSA signature. It holds the message randomizer the FORS
+ * signature and the hypertree signature.
+ */
+type Sig = { rnd : NBytes, fors : FR::ForsSig, ht : HT::HtSig }
+
+/**
+ * The secret key bytes which are the two seeds the public seed and the
+ * root.
+ */
+type SkBytes = [4 * n][8]
+
+/** The public key bytes which are the public seed and the root. */
+type PkBytes = [2 * n][8]
+
+/** The public root which is the root of the top hypertree tree. */
+pkRoot : NBytes -> NBytes -> NBytes
+pkRoot skSeed pkSeed = HT::htRoot skSeed pkSeed 0
+
+/**
+ * Generate a key pair from the two secret seeds and the public seed.
+ * The secret key carries both seeds the public seed and the public
+ * root. The public key carries the public seed and the public root.
+ */
+slhKeyGen : NBytes -> NBytes -> NBytes -> (SkBytes, PkBytes)
+slhKeyGen skSeed skPrf pkSeed = (sk, pk)
+  where
+    root = pkRoot skSeed pkSeed
+    sk = skSeed # skPrf # pkSeed # root
+    pk = pkSeed # root
+
+/**
+ * Split the message digest into the FORS message the tree index and the
+ * leaf index. The tree index and leaf index select where in the
+ * hypertree the signature sits.
+ */
+parseMsg : [m][8] -> ([L1][8], [TreeW], [IdxW])
+parseMsg digest = (md, idxTree, idxLeaf)
+  where
+    md = take`{L1} digest
+    s2 = take`{L2} (drop`{L1} digest)
+    s3 = take`{L3} (drop`{L1 + L2} digest)
+    idxTree = (zext (join s2) : [TreeW]) && ((2 ^^ (`h - `hp)) - 1)
+    idxLeaf = (zext (join s3) : [IdxW]) && ((2 ^^ (`hp : [IdxW])) - 1)
+
+/** The address that selects the FORS tree for the given tree and leaf. */
+forsAddr : [TreeW] -> [IdxW] -> ADRS
+forsAddr idxTree idxLeaf =
+  setKeyPairAddress (setTypeAndClear (setTreeAddress zero idxTree) FORS_TREE) idxLeaf
+
+/**
+ * Sign a message. Derive the randomizer hash the message to a digest
+ * sign the FORS part then sign the FORS public key with the hypertree.
+ */
+slhSign : {msg} (fin msg) => NBytes -> NBytes -> NBytes -> NBytes -> [msg][8] -> Sig
+slhSign skSeed skPrf pkSeed pkRootV msg = { rnd = r, fors = forsSig, ht = htSig }
+  where
+    r = Hash::PRF_msg skPrf pkSeed msg
+    digest = Hash::H_msg r pkSeed pkRootV msg
+    (md, idxTree, idxLeaf) = parseMsg digest
+    adrs = forsAddr idxTree idxLeaf
+    forsSig = FR::forsSign md skSeed pkSeed adrs
+    pkFors = FR::forsPkFromSig forsSig md pkSeed adrs
+    htSig = HT::htSign pkFors skSeed pkSeed idxTree idxLeaf
+
+/**
+ * Verify a signature. Recompute the digest recover the FORS public key
+ * from its signature then check it against the public root through the
+ * hypertree.
+ */
+slhVerify : {msg} (fin msg) => NBytes -> NBytes -> [msg][8] -> Sig -> Bit
+slhVerify pkSeed pkRootV msg sig = HT::htVerify pkFors pkSeed sig.ht idxTree idxLeaf pkRootV
+  where
+    digest = Hash::H_msg sig.rnd pkSeed pkRootV msg
+    (md, idxTree, idxLeaf) = parseMsg digest
+    adrs = forsAddr idxTree idxLeaf
+    pkFors = FR::forsPkFromSig sig.fors md pkSeed adrs
