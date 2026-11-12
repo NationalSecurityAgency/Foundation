@@ -41,11 +41,12 @@ RUN mv /usr/local/bin/cryptol /usr/local/bin/_cryptol \
  && echo '/usr/local/bin/_cryptol --no-call-stacks $@' > /usr/local/bin/cryptol \
  && chmod a+x /usr/local/bin/cryptol
 
-# Get latest what4-solvers compiled for ubuntu
-RUN wget https://github.com/GaloisInc/what4-solvers/releases/download/snapshot-20260622/ubuntu-24.04-X64-bin.zip \
+# Get what4-solvers compiled for ubuntu (pinned release with SHA-256 integrity check)
+RUN wget -q https://github.com/GaloisInc/what4-solvers/releases/download/snapshot-20260622/ubuntu-24.04-X64-bin.zip \
+ && echo "f4933ce5bc47d1a30d489266b86dfa6038110ab6850c96c42c34ee1327d0b705  ubuntu-24.04-X64-bin.zip" | sha256sum -c - \
  && unzip -o ubuntu-24.04-X64-bin.zip -d /usr/local/bin \
  && rm -rf ubuntu-24.04-X64-bin.zip \
- && chmod a+x /usr/local/bin/*
+ && chmod a+x /usr/local/bin/z3 /usr/local/bin/yices* /usr/local/bin/cvc* /usr/local/bin/abc /usr/local/bin/bitwuzla
 
 # Install Python clients for Cryptol and SAW in virtual environments
 ENV VENV_CRYPTOL=/opt/venv/cryptol-remote-api

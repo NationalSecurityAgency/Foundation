@@ -17,7 +17,8 @@ mod tests {
         let mut src: [u8; 500] = [0; 500];
         linear_fill(&mut src);
 
-        let result = get_array(&src as *const u8);
+        // SAFETY: src is a live, aligned array containing 500 initialized bytes.
+        let result = unsafe { get_array(&src as *const u8) };
         assert_ne!(addr_of!(src), addr_of!(result));
         assert_eq!(src, result);
     }
@@ -27,7 +28,8 @@ mod tests {
         let mut src: [u8; 500] = [0; 500];
         linear_fill(&mut src);
 
-        let result = get_vec(500, &src as *const u8);
+        // SAFETY: src is a live, aligned array containing 500 initialized bytes.
+        let result = unsafe { get_vec(500, &src as *const u8) };
         assert_eq!(src.as_slice(), result);
     }
 
@@ -37,7 +39,8 @@ mod tests {
         let mut dst: [u8; 500] = [0; 500];
         linear_fill(&mut src);
 
-        output_array(&src, &mut dst as *mut u8);
+        // SAFETY: dst is a live, aligned array with space for all 500 bytes.
+        unsafe { output_array(&src, &mut dst as *mut u8) };
         assert_eq!(src, dst);
     }
 
@@ -47,7 +50,8 @@ mod tests {
         let mut dst: [u8; 500] = [0; 500];
         linear_fill(src.as_mut_slice());
 
-        output_vec(&src, &mut dst as *mut u8);
+        // SAFETY: dst is a live, aligned array with space for src.len() bytes.
+        unsafe { output_vec(&src, &mut dst as *mut u8) };
         assert_eq!(src.as_slice(), dst);
     }
 }
