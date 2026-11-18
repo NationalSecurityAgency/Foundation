@@ -1,0 +1,58 @@
+/*
+ * Description: This module provides PBKDF2 with HMAC-SHA-224 tests
+ * [ACVP PBKDF].
+ */
+
+module algorithms::PBKDF::tests::HMAC_SHA224 where
+
+import algorithms::SHA2::SHA224 (PBKDF2)
+
+/*
+ * The following properties test PBKDF2 with HMAC-SHA-224 on test
+ * vectors provided by [ACVP PBKDF]. Numbers after the property name
+ * give the test case identifier (`tcId`) used there.
+ */
+
+property tc20 = PBKDF2`{kLen = 1432} P S C == mk
+  where
+    P  = "ggfktIvCVnTOrMgWJABpxykBlfxddOhIZHsUsbHgZlnA"
+    S  = join [ 0xb9e382cb, 0x4d5486c2, 0xa8210ef7, 0x0c120fa6
+              , 0x898c11d0, 0x07e0e39b, 0xa529c9dc, 0xe4bb78b4
+              , 0x159cc6f6, 0x819fad0d, 0x2f66da51, 0xbe8ce954
+              , 0x4763c184, 0x5fe19a80, 0xda046bfb
+              ] # 0x62b528
+    C  = 1
+    mk = join [ 0x4ae376ca, 0xcd42688e, 0x17d22216, 0x41ca255d
+              , 0x109e803d, 0x5adf8a1c, 0x7f6811f2, 0x862f2429
+              , 0x332c3235, 0xc5e6b444, 0x46b13210, 0x41dfef0e
+              , 0x4ea40c19, 0x6d32af2f, 0x60b8fd4d, 0x6c5d0e35
+              , 0xd5ddaae4, 0xfff40f16, 0xf3432831, 0x8f29a8d5
+              , 0x58a19497, 0x779dd10e, 0x9ba6d361, 0x0ac84a0d
+              , 0xdf4af6ba, 0x0ef7a4aa, 0xbc73c598, 0xbb72f411
+              , 0x22a62f1a, 0x4fc211ad, 0xba39f08b, 0x1734745c
+              , 0x5c9e9aab, 0xd9211d47, 0x7c0dbcb7, 0x3e814a01
+              , 0x2bad508b, 0x2966f550, 0x6241cae0, 0x8656603c
+              , 0x279c2f98, 0x2ee55243, 0xce30874b, 0xa4d49189
+              ] # 0x11be12
+
+property tc33 = PBKDF2`{kLen = 1312} P S C == mk
+  where
+    P  = "xzqnWzPMhYXWukxWeyiUwazRYBjsQmM"
+    S  = join [ 0x8dc5260e, 0xeb7963e5, 0x87488495, 0x23d06d9c
+              , 0x78e1d738, 0xfec15a75, 0x9747a5f3, 0x48d259f3
+              , 0x5500dcaa, 0x114cd176, 0xc0593177, 0x7d1f7d7c
+              , 0x07887a72
+              ] # 0xd98310
+    C  = 183
+    mk = join [ 0x557367b2, 0x04c70e55, 0x49ce5fb3, 0xee317b62
+              , 0xd1f1ed8c, 0x52d785e5, 0xf32f5ff0, 0xb3ef22fc
+              , 0x1c63854c, 0x4b2dee6d, 0x1c5ec124, 0x9787e6c4
+              , 0xfabc39bc, 0x41ce97ae, 0x7c631cb7, 0x31de8e34
+              , 0x7eb82d6e, 0xeb193e17, 0xecf8aa58, 0xa11d9e31
+              , 0xae7c57d8, 0x73abb95f, 0x831c053e, 0x16f979ba
+              , 0xc6c6e2d8, 0x1e1e0c4e, 0xbf8c470e, 0xeb6c77f4
+              , 0x7f5f5a22, 0x5f4262da, 0x93634a37, 0x18015dcb
+              , 0x41a2c827, 0xb07e48b5, 0x1c1be08f, 0xe7452c81
+              , 0xea9f4ad4, 0x8fce6f51, 0x67cba5c4, 0xad9213ae
+              , 0x7d671330
+              ]
