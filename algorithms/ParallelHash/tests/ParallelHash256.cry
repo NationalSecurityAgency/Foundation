@@ -1,0 +1,53 @@
+/*
+ * Description: This module provides ParallelHash256 tests
+ * [ParallelHash Examples].
+ */
+
+module algorithms::ParallelHash::tests::ParallelHash256 where
+
+import algorithms::ParallelHash::Main (ParallelHash256)
+
+/*
+ * The following properties test ParallelHash256 on the sample values
+ * provided by [ParallelHash Examples]. Property names give the sample
+ * number used there.
+ */
+
+property Sample1 = ParallelHash256`{L = 512, B = 8} X S == out
+  where
+    X   = join [ 0x00010203, 0x04050607, 0x10111213, 0x14151617
+               , 0x20212223, 0x24252627
+               ]
+    S   = []
+    out = join [ 0xbc1ef124, 0xda34495e, 0x948ead20, 0x7dd98422
+               , 0x35da432d, 0x2bbc54b4, 0xc110e64c, 0x45110553
+               , 0x1b7f2a3e, 0x0ce055c0, 0x2805e7c2, 0xde1fb746
+               , 0xaf97a1dd, 0x01f43b82, 0x4e31b876, 0x12410429
+               ]
+
+property Sample2 = ParallelHash256`{L = 512, B = 8} X S == out
+  where
+    X   = join [ 0x00010203, 0x04050607, 0x10111213, 0x14151617
+               , 0x20212223, 0x24252627
+               ]
+    S   = join "Parallel Data"
+    out = join [ 0xcdf15289, 0xb54f6212, 0xb4bc2705, 0x28b49526
+               , 0x006dd9b5, 0x4e2b6add, 0x1ef6900d, 0xda3963bb
+               , 0x33a72491, 0xf236969c, 0xa8afaea2, 0x9c682d47
+               , 0xa393c065, 0xb38e29fa, 0xe651a209, 0x1c833110
+               ]
+
+property Sample3 = ParallelHash256`{L = 512, B = 12} X S == out
+  where
+    X   = join [ 0x00010203, 0x04050607, 0x08090a0b, 0x10111213
+               , 0x14151617, 0x18191a1b, 0x20212223, 0x24252627
+               , 0x28292a2b, 0x30313233, 0x34353637, 0x38393a3b
+               , 0x40414243, 0x44454647, 0x48494a4b, 0x50515253
+               , 0x54555657, 0x58595a5b
+               ]
+    S   = join "Parallel Data"
+    out = join [ 0x69d0fcb7, 0x64ea055d, 0xd09334bc, 0x6021cb7e
+               , 0x4b61348d, 0xff375da2, 0x62671cde, 0xc3effa8d
+               , 0x1b4568a6, 0xcce16b1c, 0xad946ddd, 0xe27f6ce2
+               , 0xb8dee4cd, 0x1b24851e, 0xbf00eb90, 0xd43813e9
+               ]

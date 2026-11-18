@@ -3,7 +3,7 @@
  * [NIST-SP-800-185 Section 6].
  */
 
-module algorithms::TupleHash::Main where
+module algorithms::ParallelHash::Main where
 
 import algorithms::Keccak::derived (left_encode, right_encode)
 import algorithms::Keccak::Main (bitReordering)

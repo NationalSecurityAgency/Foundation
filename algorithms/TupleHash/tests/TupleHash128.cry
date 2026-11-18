@@ -1,0 +1,42 @@
+/*
+ * Description: This module provides TupleHash128 tests
+ * [TupleHash Examples].
+ */
+
+module algorithms::TupleHash::tests::TupleHash128 where
+
+import algorithms::TupleHash::Main (TupleHash128, addElementToTuple)
+
+/*
+ * The following properties test TupleHash128 on the sample values
+ * provided by [TupleHash Examples]. Property names give the sample
+ * number used there.
+ */
+
+property Sample1 = TupleHash128`{256} X S == out
+  where
+    X0  = addElementToTuple [] 0x000102
+    X   = addElementToTuple X0 0x101112131415
+    S   = []
+    out = join [ 0xc5d8786c, 0x1afb9b82, 0x111ab34b, 0x65b2c004
+               , 0x8fa64e6d, 0x48e26326, 0x4ce1707d, 0x3ffc8ed1
+               ]
+
+property Sample2 = TupleHash128`{256} X S == out
+  where
+    X0  = addElementToTuple [] 0x000102
+    X   = addElementToTuple X0 0x101112131415
+    S   = join "My Tuple App"
+    out = join [ 0x75cdb20f, 0xf4db1154, 0xe841d758, 0xe24160c5
+               , 0x4bae86eb, 0x8c13e7f5, 0xf40eb355, 0x88e96dfb
+               ]
+
+property Sample3 = TupleHash128`{256} X S == out
+  where
+    X0  = addElementToTuple [] 0x000102
+    X1  = addElementToTuple X0 0x101112131415
+    X   = addElementToTuple X1 0x202122232425262728
+    S   = join "My Tuple App"
+    out = join [ 0xe60f202c, 0x89a2631e, 0xda8d4c58, 0x8ca5fd07
+               , 0xf39e5151, 0x998deccf, 0x973adb38, 0x04bb6e84
+               ]

@@ -1,0 +1,42 @@
+/*
+ * Description: This module provides TupleHashXOF128 tests
+ * [TupleHashXOF Examples].
+ */
+
+module algorithms::TupleHash::tests::TupleHashXOF128 where
+
+import algorithms::TupleHash::Main (TupleHashXOF128, addElementToTuple)
+
+/*
+ * The following properties test TupleHashXOF128 on the sample values
+ * provided by [TupleHashXOF Examples]. Property names give the sample
+ * number used there.
+ */
+
+property Sample1 = TupleHashXOF128`{256} X S == out
+  where
+    X0  = addElementToTuple [] 0x000102
+    X   = addElementToTuple X0 0x101112131415
+    S   = []
+    out = join [ 0x2f103cd7, 0xc3232035, 0x3495c68d, 0xe1a81292
+               , 0x45c6325f, 0x6f2a3d60, 0x8d92179c, 0x96e68488
+               ]
+
+property Sample2 = TupleHashXOF128`{256} X S == out
+  where
+    X0  = addElementToTuple [] 0x000102
+    X   = addElementToTuple X0 0x101112131415
+    S   = join "My Tuple App"
+    out = join [ 0x3fc8ad69, 0x45312829, 0x2859a18b, 0x6c67d7ad
+               , 0x85f01b32, 0x815e22ce, 0x839c49ec, 0x374e9b9a
+               ]
+
+property Sample3 = TupleHashXOF128`{256} X S == out
+  where
+    X0  = addElementToTuple [] 0x000102
+    X1  = addElementToTuple X0 0x101112131415
+    X   = addElementToTuple X1 0x202122232425262728
+    S   = join "My Tuple App"
+    out = join [ 0x900fe16c, 0xad098d28, 0xe74d632e, 0xd852f99d
+               , 0xaab7f7df, 0x4d99e775, 0x657885b4, 0xbf76d6f8
+               ]

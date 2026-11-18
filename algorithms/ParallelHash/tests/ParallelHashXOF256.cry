@@ -1,0 +1,53 @@
+/*
+ * Description: This module provides ParallelHashXOF256 tests
+ * [ParallelHashXOF Examples].
+ */
+
+module algorithms::ParallelHash::tests::ParallelHashXOF256 where
+
+import algorithms::ParallelHash::Main (ParallelHashXOF256)
+
+/*
+ * The following properties test ParallelHashXOF256 on the sample
+ * values provided by [ParallelHashXOF Examples]. Property names give
+ * the sample number used there.
+ */
+
+property Sample1 = ParallelHashXOF256`{L = 512, B = 8} X S == out
+  where
+    X   = join [ 0x00010203, 0x04050607, 0x10111213, 0x14151617
+               , 0x20212223, 0x24252627
+               ]
+    S   = []
+    out = join [ 0xc10a0527, 0x22614684, 0x144d2847, 0x4850b410
+               , 0x757e3cba, 0x87651ba1, 0x67a5cbdd, 0xff7f4666
+               , 0x75fbf84b, 0xcae7378a, 0xc444be68, 0x1d729499
+               , 0xafca667f, 0xb879348b, 0xfdda4278, 0x63c82f1c
+               ]
+
+property Sample2 = ParallelHashXOF256`{L = 512, B = 8} X S == out
+  where
+    X   = join [ 0x00010203, 0x04050607, 0x10111213, 0x14151617
+               , 0x20212223, 0x24252627
+               ]
+    S   = join "Parallel Data"
+    out = join [ 0x538e105f, 0x1a22f44e, 0xd2f5cc16, 0x74fbd40b
+               , 0xe803d9c9, 0x9bf5f8d9, 0x0a2c8193, 0xf3fe6ea7
+               , 0x68e5c1a2, 0x0987e2c9, 0xc65febed, 0x03887a51
+               , 0xd35624ed, 0x12377594, 0xb5585541, 0xdc377efc
+               ]
+
+property Sample3 = ParallelHashXOF256`{L = 512, B = 12} X S == out
+  where
+    X   = join [ 0x00010203, 0x04050607, 0x08090a0b, 0x10111213
+               , 0x14151617, 0x18191a1b, 0x20212223, 0x24252627
+               , 0x28292a2b, 0x30313233, 0x34353637, 0x38393a3b
+               , 0x40414243, 0x44454647, 0x48494a4b, 0x50515253
+               , 0x54555657, 0x58595a5b
+               ]
+    S   = join "Parallel Data"
+    out = join [ 0x6b3e790b, 0x330c889a, 0x204c2fbc, 0x728d809f
+               , 0x19367328, 0xd852f400, 0x2dc829f7, 0x3afd6bce
+               , 0xfb7fe5b6, 0x07b13a80, 0x1c0be5c1, 0x170bdb79
+               , 0x4e339458, 0xfdb0e62a, 0x6af3d425, 0x58970249
+               ]

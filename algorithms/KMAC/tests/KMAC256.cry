@@ -1,0 +1,78 @@
+/*
+ * Description: This module provides KMAC256 tests [KMAC Examples].
+ */
+
+module algorithms::KMAC::tests::KMAC256 where
+
+import algorithms::KMAC::Main (KMAC256)
+
+/*
+ * The following properties test KMAC256 on the sample values provided
+ * by [KMAC Examples]. Property names give the sample number used
+ * there.
+ */
+
+property Sample4 = KMAC256`{512} K X S == out
+  where
+    K   = join [ 0x40414243, 0x44454647, 0x48494a4b, 0x4c4d4e4f
+               , 0x50515253, 0x54555657, 0x58595a5b, 0x5c5d5e5f
+               ]
+    X   = 0x00010203
+    S   = join "My Tagged Application"
+    out = join [ 0x20c570c3, 0x1346f703, 0xc9ac36c6, 0x1c03cb64
+               , 0xc3970d0c, 0xfc787e9b, 0x79599d27, 0x3a68d2f7
+               , 0xf69d4cc3, 0xde9d104a, 0x351689f2, 0x7cf6f595
+               , 0x1f0103f3, 0x3f4f2487, 0x1024d9c2, 0x7773a8dd
+               ]
+
+property Sample5 = KMAC256`{512} K X S == out
+  where
+    K   = join [ 0x40414243, 0x44454647, 0x48494a4b, 0x4c4d4e4f
+               , 0x50515253, 0x54555657, 0x58595a5b, 0x5c5d5e5f
+               ]
+    X   = join [ 0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f
+               , 0x10111213, 0x14151617, 0x18191a1b, 0x1c1d1e1f
+               , 0x20212223, 0x24252627, 0x28292a2b, 0x2c2d2e2f
+               , 0x30313233, 0x34353637, 0x38393a3b, 0x3c3d3e3f
+               , 0x40414243, 0x44454647, 0x48494a4b, 0x4c4d4e4f
+               , 0x50515253, 0x54555657, 0x58595a5b, 0x5c5d5e5f
+               , 0x60616263, 0x64656667, 0x68696a6b, 0x6c6d6e6f
+               , 0x70717273, 0x74757677, 0x78797a7b, 0x7c7d7e7f
+               , 0x80818283, 0x84858687, 0x88898a8b, 0x8c8d8e8f
+               , 0x90919293, 0x94959697, 0x98999a9b, 0x9c9d9e9f
+               , 0xa0a1a2a3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf
+               , 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf
+               , 0xc0c1c2c3, 0xc4c5c6c7
+               ]
+    S   = []
+    out = join [ 0x75358cf3, 0x9e41494e, 0x94970792, 0x7cee0af2
+               , 0x0a3ff553, 0x904c86b0, 0x8f21cc41, 0x4bcfd691
+               , 0x589d27cf, 0x5e15369c, 0xbbff8b9a, 0x4c2eb178
+               , 0x00855d02, 0x35ff635d, 0xa82533ec, 0x6b759b69
+               ]
+
+property Sample6 = KMAC256`{512} K X S == out
+  where
+    K   = join [ 0x40414243, 0x44454647, 0x48494a4b, 0x4c4d4e4f
+               , 0x50515253, 0x54555657, 0x58595a5b, 0x5c5d5e5f
+               ]
+    X   = join [ 0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f
+               , 0x10111213, 0x14151617, 0x18191a1b, 0x1c1d1e1f
+               , 0x20212223, 0x24252627, 0x28292a2b, 0x2c2d2e2f
+               , 0x30313233, 0x34353637, 0x38393a3b, 0x3c3d3e3f
+               , 0x40414243, 0x44454647, 0x48494a4b, 0x4c4d4e4f
+               , 0x50515253, 0x54555657, 0x58595a5b, 0x5c5d5e5f
+               , 0x60616263, 0x64656667, 0x68696a6b, 0x6c6d6e6f
+               , 0x70717273, 0x74757677, 0x78797a7b, 0x7c7d7e7f
+               , 0x80818283, 0x84858687, 0x88898a8b, 0x8c8d8e8f
+               , 0x90919293, 0x94959697, 0x98999a9b, 0x9c9d9e9f
+               , 0xa0a1a2a3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf
+               , 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf
+               , 0xc0c1c2c3, 0xc4c5c6c7
+               ]
+    S   = join "My Tagged Application"
+    out = join [ 0xb58618f7, 0x1f92e1d5, 0x6c1b8c55, 0xddd7cd18
+               , 0x8b97b4ca, 0x4d99831e, 0xb2699a83, 0x7da2e4d9
+               , 0x70fbacfd, 0xe50033ae, 0xa585f1a2, 0x708510c3
+               , 0x2d078808, 0x01bd1828, 0x98fe4768, 0x76fc8965
+               ]

@@ -1,0 +1,47 @@
+/*
+ * Description: This module provides ParallelHashXOF128 tests
+ * [ParallelHashXOF Examples].
+ */
+
+module algorithms::ParallelHash::tests::ParallelHashXOF128 where
+
+import algorithms::ParallelHash::Main (ParallelHashXOF128)
+
+/*
+ * The following properties test ParallelHashXOF128 on the sample
+ * values provided by [ParallelHashXOF Examples]. Property names give
+ * the sample number used there.
+ */
+
+property Sample1 = ParallelHashXOF128`{L = 256, B = 8} X S == out
+  where
+    X   = join [ 0x00010203, 0x04050607, 0x10111213, 0x14151617
+               , 0x20212223, 0x24252627
+               ]
+    S   = []
+    out = join [ 0xfe47d661, 0xe49ffe5b, 0x7d999922, 0xc0623567
+               , 0x50caf552, 0x985b8e8c, 0xe6667f27, 0x27c3c8d3
+               ]
+
+property Sample2 = ParallelHashXOF128`{L = 256, B = 8} X S == out
+  where
+    X   = join [ 0x00010203, 0x04050607, 0x10111213, 0x14151617
+               , 0x20212223, 0x24252627
+               ]
+    S   = join "Parallel Data"
+    out = join [ 0xea2a7931, 0x40820f7a, 0x128b8eb7, 0x0a9439f9
+               , 0x3257c6e6, 0xe79b4a54, 0x0d291d6d, 0xae7098d7
+               ]
+
+property Sample3 = ParallelHashXOF128`{L = 256, B = 12} X S == out
+  where
+    X   = join [ 0x00010203, 0x04050607, 0x08090a0b, 0x10111213
+               , 0x14151617, 0x18191a1b, 0x20212223, 0x24252627
+               , 0x28292a2b, 0x30313233, 0x34353637, 0x38393a3b
+               , 0x40414243, 0x44454647, 0x48494a4b, 0x50515253
+               , 0x54555657, 0x58595a5b
+               ]
+    S   = join "Parallel Data"
+    out = join [ 0x0127ad97, 0x72ab9046, 0x91987fcc, 0x4a24888f
+               , 0x341fa0db, 0x2145e872, 0xd4efd255, 0x376602f0
+               ]
