@@ -15,28 +15,28 @@ import algorithms::TupleHash::Main (TupleHashXOF128, addElementToTuple)
 
 property Sample1 = TupleHashXOF128`{256} X S == out
   where
-    X0  = addElementToTuple [] 0x000102
-    X   = addElementToTuple X0 0x101112131415
+    X0  = addElementToTuple [] 0x00_01_02
+    X   = addElementToTuple X0 0x10_11_12_13_14_15
     S   = []
-    out = join [ 0x2f103cd7, 0xc3232035, 0x3495c68d, 0xe1a81292
-               , 0x45c6325f, 0x6f2a3d60, 0x8d92179c, 0x96e68488
+    out = join [ 0x2F_10_3C_D7_C3_23_20_35_34_95_C6_8D_E1_A8_12_92
+               , 0x45_C6_32_5F_6F_2A_3D_60_8D_92_17_9C_96_E6_84_88
                ]
 
 property Sample2 = TupleHashXOF128`{256} X S == out
   where
-    X0  = addElementToTuple [] 0x000102
-    X   = addElementToTuple X0 0x101112131415
+    X0  = addElementToTuple [] 0x00_01_02
+    X   = addElementToTuple X0 0x10_11_12_13_14_15
     S   = join "My Tuple App"
-    out = join [ 0x3fc8ad69, 0x45312829, 0x2859a18b, 0x6c67d7ad
-               , 0x85f01b32, 0x815e22ce, 0x839c49ec, 0x374e9b9a
+    out = join [ 0x3F_C8_AD_69_45_31_28_29_28_59_A1_8B_6C_67_D7_AD
+               , 0x85_F0_1B_32_81_5E_22_CE_83_9C_49_EC_37_4E_9B_9A
                ]
 
 property Sample3 = TupleHashXOF128`{256} X S == out
   where
-    X0  = addElementToTuple [] 0x000102
-    X1  = addElementToTuple X0 0x101112131415
-    X   = addElementToTuple X1 0x202122232425262728
+    X0  = addElementToTuple [] 0x00_01_02
+    X1  = addElementToTuple X0 0x10_11_12_13_14_15
+    X   = addElementToTuple X1 0x20_21_22_23_24_25_26_27_28
     S   = join "My Tuple App"
-    out = join [ 0x900fe16c, 0xad098d28, 0xe74d632e, 0xd852f99d
-               , 0xaab7f7df, 0x4d99e775, 0x657885b4, 0xbf76d6f8
+    out = join [ 0x90_0F_E1_6C_AD_09_8D_28_E7_4D_63_2E_D8_52_F9_9D
+               , 0xAA_B7_F7_DF_4D_99_E7_75_65_78_85_B4_BF_76_D6_F8
                ]

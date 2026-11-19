@@ -15,33 +15,30 @@ import algorithms::ParallelHash::Main (ParallelHash128)
 
 property Sample1 = ParallelHash128`{L = 256, B = 8} X S == out
   where
-    X   = join [ 0x00010203, 0x04050607, 0x10111213, 0x14151617
-               , 0x20212223, 0x24252627
-               ]
+    X   = join [ 0x00_01_02_03_04_05_06_07_10_11_12_13_14_15_16_17
+               ] # 0x20_21_22_23_24_25_26_27
     S   = []
-    out = join [ 0xba8dc1d1, 0xd979331d, 0x3f813603, 0xc67f7260
-               , 0x9ab5e44b, 0x94a0b8f9, 0xaf465144, 0x54a2b4f5
+    out = join [ 0xBA_8D_C1_D1_D9_79_33_1D_3F_81_36_03_C6_7F_72_60
+               , 0x9A_B5_E4_4B_94_A0_B8_F9_AF_46_51_44_54_A2_B4_F5
                ]
 
 property Sample2 = ParallelHash128`{L = 256, B = 8} X S == out
   where
-    X   = join [ 0x00010203, 0x04050607, 0x10111213, 0x14151617
-               , 0x20212223, 0x24252627
-               ]
+    X   = join [ 0x00_01_02_03_04_05_06_07_10_11_12_13_14_15_16_17
+               ] # 0x20_21_22_23_24_25_26_27
     S   = join "Parallel Data"
-    out = join [ 0xfc484dcb, 0x3f84dcee, 0xdc353438, 0x151bee58
-               , 0x157d6efe, 0xd0445a81, 0xf165e495, 0x795b7206
+    out = join [ 0xFC_48_4D_CB_3F_84_DC_EE_DC_35_34_38_15_1B_EE_58
+               , 0x15_7D_6E_FE_D0_44_5A_81_F1_65_E4_95_79_5B_72_06
                ]
 
 property Sample3 = ParallelHash128`{L = 256, B = 12} X S == out
   where
-    X   = join [ 0x00010203, 0x04050607, 0x08090a0b, 0x10111213
-               , 0x14151617, 0x18191a1b, 0x20212223, 0x24252627
-               , 0x28292a2b, 0x30313233, 0x34353637, 0x38393a3b
-               , 0x40414243, 0x44454647, 0x48494a4b, 0x50515253
-               , 0x54555657, 0x58595a5b
-               ]
+    X   = join [ 0x00_01_02_03_04_05_06_07_08_09_0A_0B_10_11_12_13
+               , 0x14_15_16_17_18_19_1A_1B_20_21_22_23_24_25_26_27
+               , 0x28_29_2A_2B_30_31_32_33_34_35_36_37_38_39_3A_3B
+               , 0x40_41_42_43_44_45_46_47_48_49_4A_4B_50_51_52_53
+               ] # 0x54_55_56_57_58_59_5A_5B
     S   = join "Parallel Data"
-    out = join [ 0xf7fd5312, 0x896c6685, 0xc828af7e, 0x2adb97e3
-               , 0x93e7f8d5, 0x4e3c2ea4, 0xb95e5aca, 0x3796e8fc
+    out = join [ 0xF7_FD_53_12_89_6C_66_85_C8_28_AF_7E_2A_DB_97_E3
+               , 0x93_E7_F8_D5_4E_3C_2E_A4_B9_5E_5A_CA_37_96_E8_FC
                ]

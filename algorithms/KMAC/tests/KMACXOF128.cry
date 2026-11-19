@@ -15,46 +15,45 @@ import algorithms::KMAC::Main (KMACXOF128)
 
 property Sample1 = KMACXOF128`{256} K X S == out
   where
-    K   = join [ 0x40414243, 0x44454647, 0x48494a4b, 0x4c4d4e4f
-               , 0x50515253, 0x54555657, 0x58595a5b, 0x5c5d5e5f
+    K   = join [ 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
                ]
-    X   = 0x00010203
+    X   = 0x00_01_02_03
     S   = []
-    out = join [ 0xcd83740b, 0xbd92ccc8, 0xcf032b14, 0x81a0f446
-               , 0x0e7ca9dd, 0x12b08a0c, 0x4031178b, 0xacd6ec35
+    out = join [ 0xCD_83_74_0B_BD_92_CC_C8_CF_03_2B_14_81_A0_F4_46
+               , 0x0E_7C_A9_DD_12_B0_8A_0C_40_31_17_8B_AC_D6_EC_35
                ]
 
 property Sample2 = KMACXOF128`{256} K X S == out
   where
-    K   = join [ 0x40414243, 0x44454647, 0x48494a4b, 0x4c4d4e4f
-               , 0x50515253, 0x54555657, 0x58595a5b, 0x5c5d5e5f
+    K   = join [ 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
                ]
-    X   = 0x00010203
+    X   = 0x00_01_02_03
     S   = join "My Tagged Application"
-    out = join [ 0x31a44527, 0xb4ed9f5c, 0x6101d11d, 0xe6d26f06
-               , 0x20aa5c34, 0x1def4129, 0x9657fe9d, 0xf1a3b16c
+    out = join [ 0x31_A4_45_27_B4_ED_9F_5C_61_01_D1_1D_E6_D2_6F_06
+               , 0x20_AA_5C_34_1D_EF_41_29_96_57_FE_9D_F1_A3_B1_6C
                ]
 
 property Sample3 = KMACXOF128`{256} K X S == out
   where
-    K   = join [ 0x40414243, 0x44454647, 0x48494a4b, 0x4c4d4e4f
-               , 0x50515253, 0x54555657, 0x58595a5b, 0x5c5d5e5f
+    K   = join [ 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
                ]
-    X   = join [ 0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f
-               , 0x10111213, 0x14151617, 0x18191a1b, 0x1c1d1e1f
-               , 0x20212223, 0x24252627, 0x28292a2b, 0x2c2d2e2f
-               , 0x30313233, 0x34353637, 0x38393a3b, 0x3c3d3e3f
-               , 0x40414243, 0x44454647, 0x48494a4b, 0x4c4d4e4f
-               , 0x50515253, 0x54555657, 0x58595a5b, 0x5c5d5e5f
-               , 0x60616263, 0x64656667, 0x68696a6b, 0x6c6d6e6f
-               , 0x70717273, 0x74757677, 0x78797a7b, 0x7c7d7e7f
-               , 0x80818283, 0x84858687, 0x88898a8b, 0x8c8d8e8f
-               , 0x90919293, 0x94959697, 0x98999a9b, 0x9c9d9e9f
-               , 0xa0a1a2a3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf
-               , 0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf
-               , 0xc0c1c2c3, 0xc4c5c6c7
-               ]
+    X   = join [ 0x00_01_02_03_04_05_06_07_08_09_0A_0B_0C_0D_0E_0F
+               , 0x10_11_12_13_14_15_16_17_18_19_1A_1B_1C_1D_1E_1F
+               , 0x20_21_22_23_24_25_26_27_28_29_2A_2B_2C_2D_2E_2F
+               , 0x30_31_32_33_34_35_36_37_38_39_3A_3B_3C_3D_3E_3F
+               , 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
+               , 0x60_61_62_63_64_65_66_67_68_69_6A_6B_6C_6D_6E_6F
+               , 0x70_71_72_73_74_75_76_77_78_79_7A_7B_7C_7D_7E_7F
+               , 0x80_81_82_83_84_85_86_87_88_89_8A_8B_8C_8D_8E_8F
+               , 0x90_91_92_93_94_95_96_97_98_99_9A_9B_9C_9D_9E_9F
+               , 0xA0_A1_A2_A3_A4_A5_A6_A7_A8_A9_AA_AB_AC_AD_AE_AF
+               , 0xB0_B1_B2_B3_B4_B5_B6_B7_B8_B9_BA_BB_BC_BD_BE_BF
+               ] # 0xC0_C1_C2_C3_C4_C5_C6_C7
     S   = join "My Tagged Application"
-    out = join [ 0x47026c7c, 0xd793084a, 0xa0283c25, 0x3ef65849
-               , 0x0c0db614, 0x38b8326f, 0xe9bddf28, 0x1b83ae0f
+    out = join [ 0x47_02_6C_7C_D7_93_08_4A_A0_28_3C_25_3E_F6_58_49
+               , 0x0C_0D_B6_14_38_B8_32_6F_E9_BD_DF_28_1B_83_AE_0F
                ]
