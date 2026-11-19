@@ -1,0 +1,24 @@
+/*
+ * Description: This module provides SHA-1 tests [SHA-1 Examples].
+ */
+
+module algorithms::SHA1::tests::Examples where
+
+import algorithms::SHA1::Main (hash)
+
+/*
+ * The following properties test SHA-1 on the example messages
+ * provided by [SHA-1 Examples].
+ */
+
+property OneBlock_check =
+    hash (join "abc") == join [ 0xA9993E36, 0x4706816A, 0xBA3E2571
+                              , 0x7850C26C, 0x9CD0D89D
+                              ]
+
+property TwoBlock_check =
+    hash M == join [ 0x84983E44, 0x1C3BD26E, 0xBAAE4AA1
+                   , 0xF95129E5, 0xE54670F1
+                   ]
+  where
+    M = join "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"

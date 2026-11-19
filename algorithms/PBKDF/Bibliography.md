@@ -13,3 +13,7 @@ https://doi.org/10.6028/NIST.FIPS.198-1
 [RFC6070] PKCS #5: Password-Based Key Derivation Function 2
 (PBKDF2). Test Vectors. January 2011.
 https://www.ietf.org/rfc/rfc6070.txt
+
+[ACVP PBKDF] NIST Automated Cryptographic Validation Protocol
+(ACVP) server, PBKDF-1.0 test vectors.
+https://github.com/usnistgov/ACVP-Server/blob/master/gen-val/json-files/PBKDF-1.0/internalProjection.json
