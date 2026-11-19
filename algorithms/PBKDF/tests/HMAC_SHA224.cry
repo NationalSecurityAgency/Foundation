@@ -16,43 +16,40 @@ import algorithms::SHA2::SHA224 (PBKDF2)
 property tc20 = PBKDF2`{kLen = 1432} P S C == mk
   where
     P  = "ggfktIvCVnTOrMgWJABpxykBlfxddOhIZHsUsbHgZlnA"
-    S  = join [ 0xb9e382cb, 0x4d5486c2, 0xa8210ef7, 0x0c120fa6
-              , 0x898c11d0, 0x07e0e39b, 0xa529c9dc, 0xe4bb78b4
-              , 0x159cc6f6, 0x819fad0d, 0x2f66da51, 0xbe8ce954
-              , 0x4763c184, 0x5fe19a80, 0xda046bfb
-              ] # 0x62b528
+    S  = join [ 0xB9_E3_82_CB_4D_54_86_C2_A8_21_0E_F7_0C_12_0F_A6
+              , 0x89_8C_11_D0_07_E0_E3_9B_A5_29_C9_DC_E4_BB_78_B4
+              , 0x15_9C_C6_F6_81_9F_AD_0D_2F_66_DA_51_BE_8C_E9_54
+              ] # 0x47_63_C1_84_5F_E1_9A_80_DA_04_6B_FB_62_B5_28
     C  = 1
-    mk = join [ 0x4ae376ca, 0xcd42688e, 0x17d22216, 0x41ca255d
-              , 0x109e803d, 0x5adf8a1c, 0x7f6811f2, 0x862f2429
-              , 0x332c3235, 0xc5e6b444, 0x46b13210, 0x41dfef0e
-              , 0x4ea40c19, 0x6d32af2f, 0x60b8fd4d, 0x6c5d0e35
-              , 0xd5ddaae4, 0xfff40f16, 0xf3432831, 0x8f29a8d5
-              , 0x58a19497, 0x779dd10e, 0x9ba6d361, 0x0ac84a0d
-              , 0xdf4af6ba, 0x0ef7a4aa, 0xbc73c598, 0xbb72f411
-              , 0x22a62f1a, 0x4fc211ad, 0xba39f08b, 0x1734745c
-              , 0x5c9e9aab, 0xd9211d47, 0x7c0dbcb7, 0x3e814a01
-              , 0x2bad508b, 0x2966f550, 0x6241cae0, 0x8656603c
-              , 0x279c2f98, 0x2ee55243, 0xce30874b, 0xa4d49189
-              ] # 0x11be12
+    mk = join [ 0x4A_E3_76_CA_CD_42_68_8E_17_D2_22_16_41_CA_25_5D
+              , 0x10_9E_80_3D_5A_DF_8A_1C_7F_68_11_F2_86_2F_24_29
+              , 0x33_2C_32_35_C5_E6_B4_44_46_B1_32_10_41_DF_EF_0E
+              , 0x4E_A4_0C_19_6D_32_AF_2F_60_B8_FD_4D_6C_5D_0E_35
+              , 0xD5_DD_AA_E4_FF_F4_0F_16_F3_43_28_31_8F_29_A8_D5
+              , 0x58_A1_94_97_77_9D_D1_0E_9B_A6_D3_61_0A_C8_4A_0D
+              , 0xDF_4A_F6_BA_0E_F7_A4_AA_BC_73_C5_98_BB_72_F4_11
+              , 0x22_A6_2F_1A_4F_C2_11_AD_BA_39_F0_8B_17_34_74_5C
+              , 0x5C_9E_9A_AB_D9_21_1D_47_7C_0D_BC_B7_3E_81_4A_01
+              , 0x2B_AD_50_8B_29_66_F5_50_62_41_CA_E0_86_56_60_3C
+              , 0x27_9C_2F_98_2E_E5_52_43_CE_30_87_4B_A4_D4_91_89
+              ] # 0x11_BE_12
 
 property tc33 = PBKDF2`{kLen = 1312} P S C == mk
   where
     P  = "xzqnWzPMhYXWukxWeyiUwazRYBjsQmM"
-    S  = join [ 0x8dc5260e, 0xeb7963e5, 0x87488495, 0x23d06d9c
-              , 0x78e1d738, 0xfec15a75, 0x9747a5f3, 0x48d259f3
-              , 0x5500dcaa, 0x114cd176, 0xc0593177, 0x7d1f7d7c
-              , 0x07887a72
-              ] # 0xd98310
+    S  = join [ 0x8D_C5_26_0E_EB_79_63_E5_87_48_84_95_23_D0_6D_9C
+              , 0x78_E1_D7_38_FE_C1_5A_75_97_47_A5_F3_48_D2_59_F3
+              , 0x55_00_DC_AA_11_4C_D1_76_C0_59_31_77_7D_1F_7D_7C
+              ] # 0x07_88_7A_72_D9_83_10
     C  = 183
-    mk = join [ 0x557367b2, 0x04c70e55, 0x49ce5fb3, 0xee317b62
-              , 0xd1f1ed8c, 0x52d785e5, 0xf32f5ff0, 0xb3ef22fc
-              , 0x1c63854c, 0x4b2dee6d, 0x1c5ec124, 0x9787e6c4
-              , 0xfabc39bc, 0x41ce97ae, 0x7c631cb7, 0x31de8e34
-              , 0x7eb82d6e, 0xeb193e17, 0xecf8aa58, 0xa11d9e31
-              , 0xae7c57d8, 0x73abb95f, 0x831c053e, 0x16f979ba
-              , 0xc6c6e2d8, 0x1e1e0c4e, 0xbf8c470e, 0xeb6c77f4
-              , 0x7f5f5a22, 0x5f4262da, 0x93634a37, 0x18015dcb
-              , 0x41a2c827, 0xb07e48b5, 0x1c1be08f, 0xe7452c81
-              , 0xea9f4ad4, 0x8fce6f51, 0x67cba5c4, 0xad9213ae
-              , 0x7d671330
-              ]
+    mk = join [ 0x55_73_67_B2_04_C7_0E_55_49_CE_5F_B3_EE_31_7B_62
+              , 0xD1_F1_ED_8C_52_D7_85_E5_F3_2F_5F_F0_B3_EF_22_FC
+              , 0x1C_63_85_4C_4B_2D_EE_6D_1C_5E_C1_24_97_87_E6_C4
+              , 0xFA_BC_39_BC_41_CE_97_AE_7C_63_1C_B7_31_DE_8E_34
+              , 0x7E_B8_2D_6E_EB_19_3E_17_EC_F8_AA_58_A1_1D_9E_31
+              , 0xAE_7C_57_D8_73_AB_B9_5F_83_1C_05_3E_16_F9_79_BA
+              , 0xC6_C6_E2_D8_1E_1E_0C_4E_BF_8C_47_0E_EB_6C_77_F4
+              , 0x7F_5F_5A_22_5F_42_62_DA_93_63_4A_37_18_01_5D_CB
+              , 0x41_A2_C8_27_B0_7E_48_B5_1C_1B_E0_8F_E7_45_2C_81
+              , 0xEA_9F_4A_D4_8F_CE_6F_51_67_CB_A5_C4_AD_92_13_AE
+              ] # 0x7D_67_13_30
