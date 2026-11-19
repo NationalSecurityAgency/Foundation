@@ -1,0 +1,44 @@
+/*
+ * Description: This module provides ParallelHashXOF128 tests
+ * [ParallelHashXOF Examples].
+ */
+
+module algorithms::ParallelHash::tests::ParallelHashXOF128 where
+
+import algorithms::ParallelHash::Main (ParallelHashXOF128)
+
+/*
+ * The following properties test ParallelHashXOF128 on the sample
+ * values provided by [ParallelHashXOF Examples]. Property names give
+ * the sample number used there.
+ */
+
+property Sample1 = ParallelHashXOF128`{L = 256, B = 8} X S == out
+  where
+    X   = join [ 0x00_01_02_03_04_05_06_07_10_11_12_13_14_15_16_17
+               ] # 0x20_21_22_23_24_25_26_27
+    S   = []
+    out = join [ 0xFE_47_D6_61_E4_9F_FE_5B_7D_99_99_22_C0_62_35_67
+               , 0x50_CA_F5_52_98_5B_8E_8C_E6_66_7F_27_27_C3_C8_D3
+               ]
+
+property Sample2 = ParallelHashXOF128`{L = 256, B = 8} X S == out
+  where
+    X   = join [ 0x00_01_02_03_04_05_06_07_10_11_12_13_14_15_16_17
+               ] # 0x20_21_22_23_24_25_26_27
+    S   = join "Parallel Data"
+    out = join [ 0xEA_2A_79_31_40_82_0F_7A_12_8B_8E_B7_0A_94_39_F9
+               , 0x32_57_C6_E6_E7_9B_4A_54_0D_29_1D_6D_AE_70_98_D7
+               ]
+
+property Sample3 = ParallelHashXOF128`{L = 256, B = 12} X S == out
+  where
+    X   = join [ 0x00_01_02_03_04_05_06_07_08_09_0A_0B_10_11_12_13
+               , 0x14_15_16_17_18_19_1A_1B_20_21_22_23_24_25_26_27
+               , 0x28_29_2A_2B_30_31_32_33_34_35_36_37_38_39_3A_3B
+               , 0x40_41_42_43_44_45_46_47_48_49_4A_4B_50_51_52_53
+               ] # 0x54_55_56_57_58_59_5A_5B
+    S   = join "Parallel Data"
+    out = join [ 0x01_27_AD_97_72_AB_90_46_91_98_7F_CC_4A_24_88_8F
+               , 0x34_1F_A0_DB_21_45_E8_72_D4_EF_D2_55_37_66_02_F0
+               ]

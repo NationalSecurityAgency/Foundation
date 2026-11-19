@@ -1,0 +1,48 @@
+/*
+ * Description: This module provides cSHAKE256 tests
+ * [cSHAKE Examples].
+ */
+
+module algorithms::cSHAKE::tests::cSHAKE256 where
+
+import algorithms::cSHAKE::Main (cSHAKE256)
+
+/*
+ * The following properties test cSHAKE256 on the sample values
+ * provided by [cSHAKE Examples]. Property names give the sample
+ * number used there.
+ */
+
+property Sample3 = cSHAKE256`{512} X N S == out
+  where
+    X   = 0x00_01_02_03
+    N   = []
+    S   = join "Email Signature"
+    out = join [ 0xD0_08_82_8E_2B_80_AC_9D_22_18_FF_EE_1D_07_0C_48
+               , 0xB8_E4_C8_7B_FF_32_C9_69_9D_5B_68_96_EE_E0_ED_D1
+               , 0x64_02_0E_2B_E0_56_08_58_D9_C0_0C_03_7E_34_A9_69
+               , 0x37_C5_61_A7_4C_41_2B_B4_C7_46_46_95_27_28_1C_8C
+               ]
+
+property Sample4 = cSHAKE256`{512} X N S == out
+  where
+    X   = join [ 0x00_01_02_03_04_05_06_07_08_09_0A_0B_0C_0D_0E_0F
+               , 0x10_11_12_13_14_15_16_17_18_19_1A_1B_1C_1D_1E_1F
+               , 0x20_21_22_23_24_25_26_27_28_29_2A_2B_2C_2D_2E_2F
+               , 0x30_31_32_33_34_35_36_37_38_39_3A_3B_3C_3D_3E_3F
+               , 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
+               , 0x60_61_62_63_64_65_66_67_68_69_6A_6B_6C_6D_6E_6F
+               , 0x70_71_72_73_74_75_76_77_78_79_7A_7B_7C_7D_7E_7F
+               , 0x80_81_82_83_84_85_86_87_88_89_8A_8B_8C_8D_8E_8F
+               , 0x90_91_92_93_94_95_96_97_98_99_9A_9B_9C_9D_9E_9F
+               , 0xA0_A1_A2_A3_A4_A5_A6_A7_A8_A9_AA_AB_AC_AD_AE_AF
+               , 0xB0_B1_B2_B3_B4_B5_B6_B7_B8_B9_BA_BB_BC_BD_BE_BF
+               ] # 0xC0_C1_C2_C3_C4_C5_C6_C7
+    N   = []
+    S   = join "Email Signature"
+    out = join [ 0x07_DC_27_B1_1E_51_FB_AC_75_BC_7B_3C_1D_98_3E_8B
+               , 0x4B_85_FB_1D_EF_AF_21_89_12_AC_86_43_02_73_09_17
+               , 0x27_F4_2B_17_ED_1D_F6_3E_8E_C1_18_F0_4B_23_63_3C
+               , 0x1D_FB_15_74_C8_FB_55_CB_45_DA_8E_25_AF_B0_92_BB
+               ]

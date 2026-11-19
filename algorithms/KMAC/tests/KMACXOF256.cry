@@ -1,0 +1,77 @@
+/*
+ * Description: This module provides KMACXOF256 tests
+ * [KMACXOF Examples].
+ */
+
+module algorithms::KMAC::tests::KMACXOF256 where
+
+import algorithms::KMAC::Main (KMACXOF256)
+
+/*
+ * The following properties test KMACXOF256 on the sample values
+ * provided by [KMACXOF Examples]. Property names give the sample
+ * number used there.
+ */
+
+property Sample4 = KMACXOF256`{512} K X S == out
+  where
+    K   = join [ 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
+               ]
+    X   = 0x00_01_02_03
+    S   = join "My Tagged Application"
+    out = join [ 0x17_55_13_3F_15_34_75_2A_AD_07_48_F2_C7_06_FB_5C
+               , 0x78_45_12_CA_B8_35_CD_15_67_6B_16_C0_C6_64_7F_A9
+               , 0x6F_AA_7A_F6_34_A0_BF_8F_F6_DF_39_37_4F_A0_0F_AD
+               , 0x9A_39_E3_22_A7_C9_20_65_A6_4E_B1_FB_08_01_EB_2B
+               ]
+
+property Sample5 = KMACXOF256`{512} K X S == out
+  where
+    K   = join [ 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
+               ]
+    X   = join [ 0x00_01_02_03_04_05_06_07_08_09_0A_0B_0C_0D_0E_0F
+               , 0x10_11_12_13_14_15_16_17_18_19_1A_1B_1C_1D_1E_1F
+               , 0x20_21_22_23_24_25_26_27_28_29_2A_2B_2C_2D_2E_2F
+               , 0x30_31_32_33_34_35_36_37_38_39_3A_3B_3C_3D_3E_3F
+               , 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
+               , 0x60_61_62_63_64_65_66_67_68_69_6A_6B_6C_6D_6E_6F
+               , 0x70_71_72_73_74_75_76_77_78_79_7A_7B_7C_7D_7E_7F
+               , 0x80_81_82_83_84_85_86_87_88_89_8A_8B_8C_8D_8E_8F
+               , 0x90_91_92_93_94_95_96_97_98_99_9A_9B_9C_9D_9E_9F
+               , 0xA0_A1_A2_A3_A4_A5_A6_A7_A8_A9_AA_AB_AC_AD_AE_AF
+               , 0xB0_B1_B2_B3_B4_B5_B6_B7_B8_B9_BA_BB_BC_BD_BE_BF
+               ] # 0xC0_C1_C2_C3_C4_C5_C6_C7
+    S   = []
+    out = join [ 0xFF_7B_17_1F_1E_8A_2B_24_68_3E_ED_37_83_0E_E7_97
+               , 0x53_8B_A8_DC_56_3F_6D_A1_E6_67_39_1A_75_ED_C0_2C
+               , 0xA6_33_07_9F_81_CE_12_A2_5F_45_61_5E_C8_99_72_03
+               , 0x1D_18_33_73_31_D2_4C_EB_8F_8C_A8_E6_A1_9F_D9_8B
+               ]
+
+property Sample6 = KMACXOF256`{512} K X S == out
+  where
+    K   = join [ 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
+               ]
+    X   = join [ 0x00_01_02_03_04_05_06_07_08_09_0A_0B_0C_0D_0E_0F
+               , 0x10_11_12_13_14_15_16_17_18_19_1A_1B_1C_1D_1E_1F
+               , 0x20_21_22_23_24_25_26_27_28_29_2A_2B_2C_2D_2E_2F
+               , 0x30_31_32_33_34_35_36_37_38_39_3A_3B_3C_3D_3E_3F
+               , 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
+               , 0x60_61_62_63_64_65_66_67_68_69_6A_6B_6C_6D_6E_6F
+               , 0x70_71_72_73_74_75_76_77_78_79_7A_7B_7C_7D_7E_7F
+               , 0x80_81_82_83_84_85_86_87_88_89_8A_8B_8C_8D_8E_8F
+               , 0x90_91_92_93_94_95_96_97_98_99_9A_9B_9C_9D_9E_9F
+               , 0xA0_A1_A2_A3_A4_A5_A6_A7_A8_A9_AA_AB_AC_AD_AE_AF
+               , 0xB0_B1_B2_B3_B4_B5_B6_B7_B8_B9_BA_BB_BC_BD_BE_BF
+               ] # 0xC0_C1_C2_C3_C4_C5_C6_C7
+    S   = join "My Tagged Application"
+    out = join [ 0xD5_BE_73_1C_95_4E_D7_73_28_46_BB_59_DB_E3_A8_E3
+               , 0x0F_83_E7_7A_4B_FF_44_59_F2_F1_C2_B4_EC_EB_B8_CE
+               , 0x67_BA_01_C6_2E_8A_B8_57_8D_2D_49_9B_D1_BB_27_67
+               , 0x68_78_11_90_02_0A_30_6A_97_DE_28_1D_CC_30_30_5D
+               ]

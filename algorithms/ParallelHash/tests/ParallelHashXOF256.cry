@@ -1,0 +1,50 @@
+/*
+ * Description: This module provides ParallelHashXOF256 tests
+ * [ParallelHashXOF Examples].
+ */
+
+module algorithms::ParallelHash::tests::ParallelHashXOF256 where
+
+import algorithms::ParallelHash::Main (ParallelHashXOF256)
+
+/*
+ * The following properties test ParallelHashXOF256 on the sample
+ * values provided by [ParallelHashXOF Examples]. Property names give
+ * the sample number used there.
+ */
+
+property Sample1 = ParallelHashXOF256`{L = 512, B = 8} X S == out
+  where
+    X   = join [ 0x00_01_02_03_04_05_06_07_10_11_12_13_14_15_16_17
+               ] # 0x20_21_22_23_24_25_26_27
+    S   = []
+    out = join [ 0xC1_0A_05_27_22_61_46_84_14_4D_28_47_48_50_B4_10
+               , 0x75_7E_3C_BA_87_65_1B_A1_67_A5_CB_DD_FF_7F_46_66
+               , 0x75_FB_F8_4B_CA_E7_37_8A_C4_44_BE_68_1D_72_94_99
+               , 0xAF_CA_66_7F_B8_79_34_8B_FD_DA_42_78_63_C8_2F_1C
+               ]
+
+property Sample2 = ParallelHashXOF256`{L = 512, B = 8} X S == out
+  where
+    X   = join [ 0x00_01_02_03_04_05_06_07_10_11_12_13_14_15_16_17
+               ] # 0x20_21_22_23_24_25_26_27
+    S   = join "Parallel Data"
+    out = join [ 0x53_8E_10_5F_1A_22_F4_4E_D2_F5_CC_16_74_FB_D4_0B
+               , 0xE8_03_D9_C9_9B_F5_F8_D9_0A_2C_81_93_F3_FE_6E_A7
+               , 0x68_E5_C1_A2_09_87_E2_C9_C6_5F_EB_ED_03_88_7A_51
+               , 0xD3_56_24_ED_12_37_75_94_B5_58_55_41_DC_37_7E_FC
+               ]
+
+property Sample3 = ParallelHashXOF256`{L = 512, B = 12} X S == out
+  where
+    X   = join [ 0x00_01_02_03_04_05_06_07_08_09_0A_0B_10_11_12_13
+               , 0x14_15_16_17_18_19_1A_1B_20_21_22_23_24_25_26_27
+               , 0x28_29_2A_2B_30_31_32_33_34_35_36_37_38_39_3A_3B
+               , 0x40_41_42_43_44_45_46_47_48_49_4A_4B_50_51_52_53
+               ] # 0x54_55_56_57_58_59_5A_5B
+    S   = join "Parallel Data"
+    out = join [ 0x6B_3E_79_0B_33_0C_88_9A_20_4C_2F_BC_72_8D_80_9F
+               , 0x19_36_73_28_D8_52_F4_00_2D_C8_29_F7_3A_FD_6B_CE
+               , 0xFB_7F_E5_B6_07_B1_3A_80_1C_0B_E5_C1_17_0B_DB_79
+               , 0x4E_33_94_58_FD_B0_E6_2A_6A_F3_D4_25_58_97_02_49
+               ]

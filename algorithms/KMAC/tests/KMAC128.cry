@@ -1,0 +1,58 @@
+/*
+ * Description: This module provides KMAC128 tests [KMAC Examples].
+ */
+
+module algorithms::KMAC::tests::KMAC128 where
+
+import algorithms::KMAC::Main (KMAC128)
+
+/*
+ * The following properties test KMAC128 on the sample values provided
+ * by [KMAC Examples]. Property names give the sample number used
+ * there.
+ */
+
+property Sample1 = KMAC128`{256} K X S == out
+  where
+    K   = join [ 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
+               ]
+    X   = 0x00_01_02_03
+    S   = []
+    out = join [ 0xE5_78_0B_0D_3E_A6_F7_D3_A4_29_C5_70_6A_A4_3A_00
+               , 0xFA_DB_D7_D4_96_28_83_9E_31_87_24_3F_45_6E_E1_4E
+               ]
+
+property Sample2 = KMAC128`{256} K X S == out
+  where
+    K   = join [ 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
+               ]
+    X   = 0x00_01_02_03
+    S   = join "My Tagged Application"
+    out = join [ 0x3B_1F_BA_96_3C_D8_B0_B5_9E_8C_1A_6D_71_88_8B_71
+               , 0x43_65_1A_F8_BA_0A_70_70_C0_97_9E_28_11_32_4A_A5
+               ]
+
+property Sample3 = KMAC128`{256} K X S == out
+  where
+    K   = join [ 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
+               ]
+    X   = join [ 0x00_01_02_03_04_05_06_07_08_09_0A_0B_0C_0D_0E_0F
+               , 0x10_11_12_13_14_15_16_17_18_19_1A_1B_1C_1D_1E_1F
+               , 0x20_21_22_23_24_25_26_27_28_29_2A_2B_2C_2D_2E_2F
+               , 0x30_31_32_33_34_35_36_37_38_39_3A_3B_3C_3D_3E_3F
+               , 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
+               , 0x60_61_62_63_64_65_66_67_68_69_6A_6B_6C_6D_6E_6F
+               , 0x70_71_72_73_74_75_76_77_78_79_7A_7B_7C_7D_7E_7F
+               , 0x80_81_82_83_84_85_86_87_88_89_8A_8B_8C_8D_8E_8F
+               , 0x90_91_92_93_94_95_96_97_98_99_9A_9B_9C_9D_9E_9F
+               , 0xA0_A1_A2_A3_A4_A5_A6_A7_A8_A9_AA_AB_AC_AD_AE_AF
+               , 0xB0_B1_B2_B3_B4_B5_B6_B7_B8_B9_BA_BB_BC_BD_BE_BF
+               ] # 0xC0_C1_C2_C3_C4_C5_C6_C7
+    S   = join "My Tagged Application"
+    out = join [ 0x1F_5B_4E_6C_CA_02_20_9E_0D_CB_5C_A6_35_B8_9A_15
+               , 0xE2_71_EC_C7_60_07_1D_FD_80_5F_AA_38_F9_72_92_30
+               ]

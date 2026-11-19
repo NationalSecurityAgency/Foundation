@@ -1,0 +1,50 @@
+/*
+ * Description: This module provides ParallelHash256 tests
+ * [ParallelHash Examples].
+ */
+
+module algorithms::ParallelHash::tests::ParallelHash256 where
+
+import algorithms::ParallelHash::Main (ParallelHash256)
+
+/*
+ * The following properties test ParallelHash256 on the sample values
+ * provided by [ParallelHash Examples]. Property names give the sample
+ * number used there.
+ */
+
+property Sample1 = ParallelHash256`{L = 512, B = 8} X S == out
+  where
+    X   = join [ 0x00_01_02_03_04_05_06_07_10_11_12_13_14_15_16_17
+               ] # 0x20_21_22_23_24_25_26_27
+    S   = []
+    out = join [ 0xBC_1E_F1_24_DA_34_49_5E_94_8E_AD_20_7D_D9_84_22
+               , 0x35_DA_43_2D_2B_BC_54_B4_C1_10_E6_4C_45_11_05_53
+               , 0x1B_7F_2A_3E_0C_E0_55_C0_28_05_E7_C2_DE_1F_B7_46
+               , 0xAF_97_A1_DD_01_F4_3B_82_4E_31_B8_76_12_41_04_29
+               ]
+
+property Sample2 = ParallelHash256`{L = 512, B = 8} X S == out
+  where
+    X   = join [ 0x00_01_02_03_04_05_06_07_10_11_12_13_14_15_16_17
+               ] # 0x20_21_22_23_24_25_26_27
+    S   = join "Parallel Data"
+    out = join [ 0xCD_F1_52_89_B5_4F_62_12_B4_BC_27_05_28_B4_95_26
+               , 0x00_6D_D9_B5_4E_2B_6A_DD_1E_F6_90_0D_DA_39_63_BB
+               , 0x33_A7_24_91_F2_36_96_9C_A8_AF_AE_A2_9C_68_2D_47
+               , 0xA3_93_C0_65_B3_8E_29_FA_E6_51_A2_09_1C_83_31_10
+               ]
+
+property Sample3 = ParallelHash256`{L = 512, B = 12} X S == out
+  where
+    X   = join [ 0x00_01_02_03_04_05_06_07_08_09_0A_0B_10_11_12_13
+               , 0x14_15_16_17_18_19_1A_1B_20_21_22_23_24_25_26_27
+               , 0x28_29_2A_2B_30_31_32_33_34_35_36_37_38_39_3A_3B
+               , 0x40_41_42_43_44_45_46_47_48_49_4A_4B_50_51_52_53
+               ] # 0x54_55_56_57_58_59_5A_5B
+    S   = join "Parallel Data"
+    out = join [ 0x69_D0_FC_B7_64_EA_05_5D_D0_93_34_BC_60_21_CB_7E
+               , 0x4B_61_34_8D_FF_37_5D_A2_62_67_1C_DE_C3_EF_FA_8D
+               , 0x1B_45_68_A6_CC_E1_6B_1C_AD_94_6D_DD_E2_7F_6C_E2
+               , 0xB8_DE_E4_CD_1B_24_85_1E_BF_00_EB_90_D4_38_13_E9
+               ]

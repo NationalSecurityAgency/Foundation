@@ -1,0 +1,44 @@
+/*
+ * Description: This module provides cSHAKE128 tests
+ * [cSHAKE Examples].
+ */
+
+module algorithms::cSHAKE::tests::cSHAKE128 where
+
+import algorithms::cSHAKE::Main (cSHAKE128)
+
+/*
+ * The following properties test cSHAKE128 on the sample values
+ * provided by [cSHAKE Examples]. Property names give the sample
+ * number used there.
+ */
+
+property Sample1 = cSHAKE128`{256} X N S == out
+  where
+    X   = 0x00_01_02_03
+    N   = []
+    S   = join "Email Signature"
+    out = join [ 0xC1_C3_69_25_B6_40_9A_04_F1_B5_04_FC_BC_A9_D8_2B
+               , 0x40_17_27_7C_B5_ED_2B_20_65_FC_1D_38_14_D5_AA_F5
+               ]
+
+property Sample2 = cSHAKE128`{256} X N S == out
+  where
+    X   = join [ 0x00_01_02_03_04_05_06_07_08_09_0A_0B_0C_0D_0E_0F
+               , 0x10_11_12_13_14_15_16_17_18_19_1A_1B_1C_1D_1E_1F
+               , 0x20_21_22_23_24_25_26_27_28_29_2A_2B_2C_2D_2E_2F
+               , 0x30_31_32_33_34_35_36_37_38_39_3A_3B_3C_3D_3E_3F
+               , 0x40_41_42_43_44_45_46_47_48_49_4A_4B_4C_4D_4E_4F
+               , 0x50_51_52_53_54_55_56_57_58_59_5A_5B_5C_5D_5E_5F
+               , 0x60_61_62_63_64_65_66_67_68_69_6A_6B_6C_6D_6E_6F
+               , 0x70_71_72_73_74_75_76_77_78_79_7A_7B_7C_7D_7E_7F
+               , 0x80_81_82_83_84_85_86_87_88_89_8A_8B_8C_8D_8E_8F
+               , 0x90_91_92_93_94_95_96_97_98_99_9A_9B_9C_9D_9E_9F
+               , 0xA0_A1_A2_A3_A4_A5_A6_A7_A8_A9_AA_AB_AC_AD_AE_AF
+               , 0xB0_B1_B2_B3_B4_B5_B6_B7_B8_B9_BA_BB_BC_BD_BE_BF
+               ] # 0xC0_C1_C2_C3_C4_C5_C6_C7
+    N   = []
+    S   = join "Email Signature"
+    out = join [ 0xC5_22_1D_50_E4_F8_22_D9_6A_2E_88_81_A9_61_42_0F
+               , 0x29_4B_7B_24_FE_3D_20_94_BA_ED_2C_65_24_CC_16_6B
+               ]

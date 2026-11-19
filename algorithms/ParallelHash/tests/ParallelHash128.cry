@@ -1,0 +1,44 @@
+/*
+ * Description: This module provides ParallelHash128 tests
+ * [ParallelHash Examples].
+ */
+
+module algorithms::ParallelHash::tests::ParallelHash128 where
+
+import algorithms::ParallelHash::Main (ParallelHash128)
+
+/*
+ * The following properties test ParallelHash128 on the sample values
+ * provided by [ParallelHash Examples]. Property names give the sample
+ * number used there.
+ */
+
+property Sample1 = ParallelHash128`{L = 256, B = 8} X S == out
+  where
+    X   = join [ 0x00_01_02_03_04_05_06_07_10_11_12_13_14_15_16_17
+               ] # 0x20_21_22_23_24_25_26_27
+    S   = []
+    out = join [ 0xBA_8D_C1_D1_D9_79_33_1D_3F_81_36_03_C6_7F_72_60
+               , 0x9A_B5_E4_4B_94_A0_B8_F9_AF_46_51_44_54_A2_B4_F5
+               ]
+
+property Sample2 = ParallelHash128`{L = 256, B = 8} X S == out
+  where
+    X   = join [ 0x00_01_02_03_04_05_06_07_10_11_12_13_14_15_16_17
+               ] # 0x20_21_22_23_24_25_26_27
+    S   = join "Parallel Data"
+    out = join [ 0xFC_48_4D_CB_3F_84_DC_EE_DC_35_34_38_15_1B_EE_58
+               , 0x15_7D_6E_FE_D0_44_5A_81_F1_65_E4_95_79_5B_72_06
+               ]
+
+property Sample3 = ParallelHash128`{L = 256, B = 12} X S == out
+  where
+    X   = join [ 0x00_01_02_03_04_05_06_07_08_09_0A_0B_10_11_12_13
+               , 0x14_15_16_17_18_19_1A_1B_20_21_22_23_24_25_26_27
+               , 0x28_29_2A_2B_30_31_32_33_34_35_36_37_38_39_3A_3B
+               , 0x40_41_42_43_44_45_46_47_48_49_4A_4B_50_51_52_53
+               ] # 0x54_55_56_57_58_59_5A_5B
+    S   = join "Parallel Data"
+    out = join [ 0xF7_FD_53_12_89_6C_66_85_C8_28_AF_7E_2A_DB_97_E3
+               , 0x93_E7_F8_D5_4E_3C_2E_A4_B9_5E_5A_CA_37_96_E8_FC
+               ]

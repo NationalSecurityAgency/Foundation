@@ -1,0 +1,42 @@
+/*
+ * Description: This module provides TupleHash128 tests
+ * [TupleHash Examples].
+ */
+
+module algorithms::TupleHash::tests::TupleHash128 where
+
+import algorithms::TupleHash::Main (TupleHash128, addElementToTuple)
+
+/*
+ * The following properties test TupleHash128 on the sample values
+ * provided by [TupleHash Examples]. Property names give the sample
+ * number used there.
+ */
+
+property Sample1 = TupleHash128`{256} X S == out
+  where
+    X0  = addElementToTuple [] 0x00_01_02
+    X   = addElementToTuple X0 0x10_11_12_13_14_15
+    S   = []
+    out = join [ 0xC5_D8_78_6C_1A_FB_9B_82_11_1A_B3_4B_65_B2_C0_04
+               , 0x8F_A6_4E_6D_48_E2_63_26_4C_E1_70_7D_3F_FC_8E_D1
+               ]
+
+property Sample2 = TupleHash128`{256} X S == out
+  where
+    X0  = addElementToTuple [] 0x00_01_02
+    X   = addElementToTuple X0 0x10_11_12_13_14_15
+    S   = join "My Tuple App"
+    out = join [ 0x75_CD_B2_0F_F4_DB_11_54_E8_41_D7_58_E2_41_60_C5
+               , 0x4B_AE_86_EB_8C_13_E7_F5_F4_0E_B3_55_88_E9_6D_FB
+               ]
+
+property Sample3 = TupleHash128`{256} X S == out
+  where
+    X0  = addElementToTuple [] 0x00_01_02
+    X1  = addElementToTuple X0 0x10_11_12_13_14_15
+    X   = addElementToTuple X1 0x20_21_22_23_24_25_26_27_28
+    S   = join "My Tuple App"
+    out = join [ 0xE6_0F_20_2C_89_A2_63_1E_DA_8D_4C_58_8C_A5_FD_07
+               , 0xF3_9E_51_51_99_8D_EC_CF_97_3A_DB_38_04_BB_6E_84
+               ]

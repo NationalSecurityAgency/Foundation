@@ -1,0 +1,48 @@
+/*
+ * Description: This module provides TupleHashXOF256 tests
+ * [TupleHashXOF Examples].
+ */
+
+module algorithms::TupleHash::tests::TupleHashXOF256 where
+
+import algorithms::TupleHash::Main (TupleHashXOF256, addElementToTuple)
+
+/*
+ * The following properties test TupleHashXOF256 on the sample values
+ * provided by [TupleHashXOF Examples]. Property names give the sample
+ * number used there.
+ */
+
+property Sample4 = TupleHashXOF256`{512} X S == out
+  where
+    X0  = addElementToTuple [] 0x00_01_02
+    X   = addElementToTuple X0 0x10_11_12_13_14_15
+    S   = []
+    out = join [ 0x03_DE_D4_61_0E_D6_45_0A_1E_3F_8B_C4_49_51_D1_4F
+               , 0xBC_38_4A_B0_EF_E5_7B_00_0D_F6_B6_DF_5A_AE_7C_D5
+               , 0x68_E7_73_77_DA_F1_3F_37_EC_75_CF_5F_C5_98_B6_84
+               , 0x1D_51_DD_20_7C_99_1C_D4_5D_21_0B_A6_0A_C5_2E_B9
+               ]
+
+property Sample5 = TupleHashXOF256`{512} X S == out
+  where
+    X0  = addElementToTuple [] 0x00_01_02
+    X   = addElementToTuple X0 0x10_11_12_13_14_15
+    S   = join "My Tuple App"
+    out = join [ 0x64_83_CB_3C_99_52_EB_20_E8_30_AF_47_85_85_1F_C5
+               , 0x97_EE_3B_F9_3B_B7_60_2C_0E_F6_A6_5D_74_1A_EC_A7
+               , 0xE6_3C_3B_12_89_81_AA_05_C6_D2_74_38_C7_9D_27_54
+               , 0xBB_1B_71_91_F1_25_D6_62_0F_CA_12_CE_65_8B_24_42
+               ]
+
+property Sample6 = TupleHashXOF256`{512} X S == out
+  where
+    X0  = addElementToTuple [] 0x00_01_02
+    X1  = addElementToTuple X0 0x10_11_12_13_14_15
+    X   = addElementToTuple X1 0x20_21_22_23_24_25_26_27_28
+    S   = join "My Tuple App"
+    out = join [ 0x0C_59_B1_14_64_F2_33_6C_34_66_3E_D5_1B_2B_95_0B
+               , 0xEC_74_36_10_85_6F_36_C2_8D_1D_08_8D_8A_24_46_28
+               , 0x4D_D0_98_30_A6_A1_78_DC_75_23_76_19_9F_AE_93_5D
+               , 0x86_CF_DE_E5_91_3D_49_22_DF_D3_69_B6_6A_53_C8_97
+               ]
