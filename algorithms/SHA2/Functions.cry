@@ -28,7 +28,7 @@ SIGMA_256_1 x = ROTR`{ 6} x ^ ROTR`{11} x ^ ROTR`{25} x
 sigma_256_0 x = ROTR`{ 7} x ^ ROTR`{18} x ^ SHR`{ 3} x
 sigma_256_1 x = ROTR`{17} x ^ ROTR`{19} x ^ SHR`{10} x
 
-// SHA-224 and SHA-256 logical functions FIPS-PUB-180-4 Section 4.1.3].
+// SHA-384 and SHA-512 logical functions FIPS-PUB-180-4 Section 4.1.3].
 SIGMA_512_0 x = ROTR`{28} x ^ ROTR`{34} x ^ ROTR`{39} x
 SIGMA_512_1 x = ROTR`{14} x ^ ROTR`{18} x ^ ROTR`{41} x
 sigma_512_0 x = ROTR`{ 1} x ^ ROTR`{ 8} x ^ SHR`{7} x

@@ -7,6 +7,8 @@ updates:
     directories:
       - "algorithms/AES/rust/KeyExpansion/"
       - "algorithms/AES/rust/Cipher/"
+      - "algorithms/Keccak/rust/"
+      - "algorithms/SHA2/rust/"
       - "shared/rust/ffi_utils/"
     schedule:
       interval: "daily"

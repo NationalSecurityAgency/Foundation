@@ -1,0 +1,13 @@
+[package]
+name = "SHA2"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "SHA2"
+path = "src/lib.rs"
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+ffi_utils = { path = "../../../shared/rust/ffi_utils" }
+num = "0.4.3"
