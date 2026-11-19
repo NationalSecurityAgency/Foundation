@@ -81,14 +81,12 @@ property b2hInvertsh2b H = b2h (h2b`{n, m} H) == L # z # R
  * while in hexadecimal representation, bytes are written with the
  * high-order digit first. E.g., 0x01 = 10000000 and 0x80 = 00000001."
  * [NIST-SP-800-185 Section 2]. Note that `take`ing `n` bits from a
- * reordered *infinte* sequence can give a different result than
+ * reordered *infinite* sequence can give a different result than
  * reordering a finite sequence of length `n`. Namely, the residual
  * bits in any final partial byte may be different. For example:
  * ```
- * > take`{12} (bitReordering (0x123 # zero : [inf]))
- * 0x480
- * > bitReordering 0x123
- * 0x483
+ * :prove take`{12} (bitReordering (0x123 # zero : [inf])) == 0x480
+ * :prove bitReordering 0x123 == 0x483
  * ```
  */
 bitReordering : {a} [a] -> [a]
@@ -114,7 +112,7 @@ property bitReorderingIsAnInvolution x = bitReordering (bitReordering x) == x
 
 /**
  * This property demonstrates that `take`ing `n` bits from a reordered
- * *infinte* sequence can give a different result than reordering a
+ * *infinite* sequence can give a different result than reordering a
  * finite sequence of length `n`. Namely, the residual bits in any
  * final partial byte may be different. This is something to be aware
  * of when working with infinite sequences, e.g. XOFs.

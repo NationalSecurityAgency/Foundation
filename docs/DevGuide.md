@@ -23,9 +23,9 @@ environment.
 
 ## Licensing and copyright
 
-* Primary License: [Apache License 2.0](LICENSE)
+* Primary License: [Apache License 2.0](../LICENSE)
 
-If possible please try to stick to the [Apache License 2.0](LICENSE)
+If possible please try to stick to the [Apache License 2.0](../LICENSE)
 license when developing for Foundation.
 
 If you are contributing code to the Foundation project, the preferred
@@ -88,7 +88,7 @@ This will enable Cryptol specifications with FFI components to make use of perfo
 
 ### SAW
 
-To execute SAW-focused assurance tests during development, first open the [SAW Codespace](https://codespaces.new/NationalSecurityAgency/foundation?devcontainer_path=.devcontainer%2Fsaw-dev%2Fdevcontainer.json). Then, set the `CRYPTOLPATH` environment variable to point to the `foundation` project and start up [`saw-remote-api](https://github.com/GaloisInc/saw-script/tree/master/saw-remote-api), a JSON RPC server that provides a programmatic interface to SAW from general purpose programming languages such as Python.
+To execute SAW-focused assurance tests during development, first open the [SAW Codespace](https://codespaces.new/NationalSecurityAgency/foundation?devcontainer_path=.devcontainer%2Fsaw-dev%2Fdevcontainer.json). Then, set the `CRYPTOLPATH` environment variable to point to the `foundation` project and start up [`saw-remote-api`](https://github.com/GaloisInc/saw-script/tree/master/saw-remote-api), a JSON RPC server that provides a programmatic interface to SAW from general purpose programming languages such as Python.
 
 ```console
 $ export CRYPTOLPATH=/workspaces/foundation

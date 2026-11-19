@@ -123,7 +123,7 @@ ec_decompress S = R
  * Property demonstrating that `mp_mod_sqrt` is correct.
  *
  * ```
- * :check decompress_correct
+ * :check mp_mod_sqrt_correct
  * ```
  */
 mp_mod_sqrt_correct : Z p -> Bool

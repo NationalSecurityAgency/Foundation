@@ -49,4 +49,4 @@ participate in this open source project.
 [devguide]: docs/DevGuide.md
 [career]: https://www.intelligencecareers.gov/nsa
 [releases]: https://github.com/NationalSecurityAgency/foundation/releases
-[main]: https://github.com/NationalSecurityAgency/foundation/archive/refs/heads/master.zip
+[main]: https://github.com/NationalSecurityAgency/foundation/archive/refs/heads/main.zip
