@@ -7,3 +7,7 @@ http://dx.doi.org/10.6028/NIST.FIPS.202
 [NIST-SP-800-185] NIST Special Publication 800-185. SHA-3 Derived
 Functions: cSHAKE, KMAC, TupleHash and ParallelHash. December 2016.
 https://doi.org/10.6028/NIST.SP.800-185
+
+[Bit Examples] https://csrc.nist.gov/projects/cryptographic-standards-and-guidelines/example-values#aHashing
+
+[Byte Examples] https://csrc.nist.gov/Projects/Cryptographic-Algorithm-Validation-Program/Secure-Hashing#sha3vsha3vss
