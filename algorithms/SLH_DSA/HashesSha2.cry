@@ -1,0 +1,120 @@
+/*
+ * Description: This module provides a Cryptol specification for the SLH-DSA
+ * hash functions instantiated with SHA2 [FIPS 205 Section 11.2]. F and PRF
+ * use SHA-256 for every parameter set. H, T_l, H_msg and PRF_msg use SHA-256
+ * at security category 1 and SHA-512 at security categories 3 and 5. The
+ * inputs and output of every function are byte strings [FIPS 205 Section 4.1].
+ */
+
+module algorithms::SLH_DSA::HashesSha2 where
+
+import algorithms::SHA2::SHA256 as SHA256
+import algorithms::SHA2::SHA512 as SHA512
+import algorithms::SLH_DSA::Address (ADRS)
+
+parameter
+
+  /** The security parameter which is the byte length of each hash value. */
+  type n : #
+  type constraint (fin n, n >= 16, n <= 32)
+
+  /** The byte length of the message digest the message hash produces. */
+  type m : #
+  type constraint (fin m, m >= 1)
+
+/** A string of n bytes, the security parameter width of the scheme. */
+type NBytes = [n][8]
+
+/** The n byte output shared by the tweakable hashes. */
+type NOut = [n][8]
+
+private
+  /** SHA-256 over the joined input bytes returned as thirty two bytes. */
+  sha256b : {in} (fin in, width (8 * in) <= 64) => [in][8] -> [32][8]
+  sha256b bytes = split (SHA256::hash (join bytes))
+
+  /** SHA-512 over the joined input bytes returned as sixty four bytes. */
+  sha512b : {in} (fin in, width (8 * in) <= 128) => [in][8] -> [64][8]
+  sha512b bytes = split (SHA512::hash (join bytes))
+
+  /** The compressed twenty two byte address [FIPS 205 Section 11.2]. */
+  adrsc : ADRS -> [22][8]
+  adrsc adrs = [adrs @ 3] # (adrs @@ [8 .. <16]) # [adrs @ 19] # (adrs @@ [20 .. <32])
+
+  /** True at security category 1 where SHA-256 is used throughout. */
+  cat1 : Bit
+  cat1 = (`n : [8]) == 16
+
+  /** The tweakable hash that always uses SHA-256 [FIPS 205 Section 11.2]. */
+  smallHash : {ml} (fin ml, width (8 * (86 + ml)) <= 64) => NBytes -> ADRS -> [ml][8] -> NOut
+  smallHash pkSeed adrs msg =
+    take`{n} (sha256b (pkSeed # (zero : [64 - n][8]) # adrsc adrs # msg))
+
+  /** The tweakable hash that uses SHA-256 at category 1 and SHA-512 above it. */
+  bigHash : {ml} (fin ml, width (8 * (86 + ml)) <= 64, width (8 * (150 + ml)) <= 128)
+         => NBytes -> ADRS -> [ml][8] -> NOut
+  bigHash pkSeed adrs msg =
+    if cat1
+      then take`{n} (sha256b (pkSeed # (zero : [ 64 - n][8]) # adrsc adrs # msg))
+      else take`{n} (sha512b (pkSeed # (zero : [128 - n][8]) # adrsc adrs # msg))
+
+  /** MGF1 over SHA-256 [FIPS 205 Section 11.2]. */
+  mgf1_256 : {outl, sl} (fin outl, fin sl, width (8 * (sl + 4)) <= 64) => [sl][8] -> [outl][8]
+  mgf1_256 seed =
+    take`{outl} (join [ sha256b (seed # (split (i : [32]) : [4][8]))
+                      | i <- take`{(outl + 31) / 32} ([0 ...] : [_][32]) ])
+
+  /** MGF1 over SHA-512 [FIPS 205 Section 11.2]. */
+  mgf1_512 : {outl, sl} (fin outl, fin sl, width (8 * (sl + 4)) <= 128) => [sl][8] -> [outl][8]
+  mgf1_512 seed =
+    take`{outl} (join [ sha512b (seed # (split (i : [32]) : [4][8]))
+                      | i <- take`{(outl + 63) / 64} ([0 ...] : [_][32]) ])
+
+/**
+ * The pseudorandom function that derives a secret value from the
+ * public seed the secret seed and an address.
+ */
+PRF : NBytes -> NBytes -> ADRS -> NOut
+PRF pkSeed skSeed adrs = smallHash pkSeed adrs skSeed
+
+/**
+ * The pseudorandom function that derives the message randomizer from
+ * the secret prf value an optional random value and the message.
+ */
+PRF_msg : {msg} (fin msg, width (512 + 8 * (n + msg)) <= 64) => NBytes -> NBytes -> [msg][8] -> NOut
+PRF_msg skPrf optRand msg =
+  if cat1
+    then take`{n} (split (SHA256::HMAC skPrf (join (optRand # msg))) : [32][8])
+    else take`{n} (split (SHA512::HMAC skPrf (join (optRand # msg))) : [64][8])
+
+/**
+ * The message hash that maps the randomizer the public seed the public
+ * root and the message to the message digest.
+ */
+H_msg : {msg} (fin msg, width (8 * (3 * n + msg)) <= 64) => NBytes -> NBytes -> NBytes -> [msg][8] -> [m][8]
+H_msg r pkSeed pkRoot msg =
+  if cat1
+    then mgf1_256`{m} (r # pkSeed # sha256b (r # pkSeed # pkRoot # msg))
+    else mgf1_512`{m} (r # pkSeed # sha512b (r # pkSeed # pkRoot # msg))
+
+/**
+ * The tweakable hash for a single n byte input. It takes one step
+ * along a WOTS plus chain.
+ */
+F : NBytes -> ADRS -> NBytes -> NOut
+F pkSeed adrs m1 = smallHash pkSeed adrs m1
+
+/**
+ * The tweakable hash for a two n byte input. It joins two child nodes
+ * into their parent.
+ */
+H : NBytes -> ADRS -> [2 * n][8] -> NOut
+H pkSeed adrs m2 = bigHash pkSeed adrs m2
+
+/**
+ * The tweakable hash for a variable length input. It compresses a list
+ * of values into one n byte value.
+ */
+T_l : {l} (fin l, width (8 * (86 + l * n)) <= 64, width (8 * (150 + l * n)) <= 128)
+   => NBytes -> ADRS -> [l * n][8] -> NOut
+T_l pkSeed adrs ml = bigHash pkSeed adrs ml

@@ -1,0 +1,26 @@
+/*
+ * This is a SAW script that guides SAW to prove the properties found
+ * in `algorithms/SLH_DSA/Utils.cry`.
+ */
+
+// Include common SAW utilities.
+include "../../../shared/SAW/utils.saw";
+
+// Import the Cryptol specification for the SLH-DSA conversion helpers.
+import "../Utils.cry";
+
+let verify_toIntInvertstoByte (n : Int, a : Int) : TopLevel Theorem =
+    proveit {{ toIntInvertstoByte`{n, a} }} rme;
+
+/*
+ * Verify public properties of `algorithms::SLH_DSA::Utils`.
+ */
+let main : TopLevel [Theorem] = do {
+  toIntInvertstoByte_lemmas <- for [ (0,  0)
+                                   , (1,  0), (1, 1), (1, 2), (1, 3), (1, 4)
+                                   , (1,  5), (1, 6), (1, 7), (1, 8)
+                                   , (4, 32), (8, 64)
+                                   ] verify_toIntInvertstoByte;
+
+  return toIntInvertstoByte_lemmas;
+};

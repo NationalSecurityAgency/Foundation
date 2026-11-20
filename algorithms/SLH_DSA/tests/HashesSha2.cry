@@ -1,0 +1,46 @@
+/*
+ * Description: This module checks the SLH-DSA hash functions for the SHA2
+ * parameter sets against independently computed SHA-256 and SHA-512
+ * reference values at every security category [FIPS 205 Section 11.2].
+ */
+
+module algorithms::SLH_DSA::tests::HashesSha2 where
+
+import algorithms::SLH_DSA::HashesSha2 as H16 where
+  type n = 16
+  type m = 30
+
+import algorithms::SLH_DSA::HashesSha2 as H24 where
+  type n = 24
+  type m = 39
+
+import algorithms::SLH_DSA::HashesSha2 as H32 where
+  type n = 32
+  type m = 49
+
+adrs : [32][8]
+adrs = [0 .. 31]
+
+/** Security category 1, SHA-256 throughout. */
+property F16   = join (H16::F (repeat 0x22) adrs (repeat 0x01)) == 0x48ef13439dabf25c428b17f595b3153e
+property PRF16 = join (H16::PRF (repeat 0x22) (repeat 0x11) adrs) == 0xbab3f547d8ad2ada5e1ebd163ee6900e
+property H16p  = join (H16::H (repeat 0x22) adrs (repeat 0x05)) == 0xddb41832432bb9e3cddaa7a709eed976
+property Tl16  = join (H16::T_l (repeat 0x22) adrs (repeat 0x05 : [48][8])) == 0x7b785d8860f41fa32c9bc304ba862369
+property Hm16  = join (H16::H_msg (repeat 0x44) (repeat 0x22) (repeat 0x66) (repeat 0x07 : [10][8])) == 0x6bad77a0d52e2514c7b287491305c33c73b363428045af6f923047e7edf7
+property Pm16  = join (H16::PRF_msg (repeat 0x99) (repeat 0x88) (repeat 0x07 : [10][8])) == 0x7d67a6421fe7ecba0a09f10fb3923945
+
+/** Security category 3, SHA-256 for F and PRF, SHA-512 above. */
+property F24   = join (H24::F (repeat 0x22) adrs (repeat 0x01)) == 0xbcf3116f3293ba871485f0107bc47f3cf4173658e8e8cb35
+property PRF24 = join (H24::PRF (repeat 0x22) (repeat 0x11) adrs) == 0x7e0f7021d7c8282bc0247cd0338bcc04025737e0d5c65651
+property H24p  = join (H24::H (repeat 0x22) adrs (repeat 0x05)) == 0x4067103cc4ffa374ec8d8ef4a9bdeb34aca4d18dca38ea1b
+property Tl24  = join (H24::T_l (repeat 0x22) adrs (repeat 0x05 : [72][8])) == 0x6beaa29b7dc4edfe49d1cd6ae004226d67ee70d7cabe2013
+property Hm24  = join (H24::H_msg (repeat 0x44) (repeat 0x22) (repeat 0x66) (repeat 0x07 : [10][8])) == 0xb9dfa06893c796abe88e64f2de2d50a829e84fcf24b058894728377d6ea5c8231e5f25cc00cb65
+property Pm24  = join (H24::PRF_msg (repeat 0x99) (repeat 0x88) (repeat 0x07 : [10][8])) == 0xca5e1b7f2ae88285ab93cf41914fff5fd7356fcdb8ccb52f
+
+/** Security category 5, SHA-256 for F and PRF, SHA-512 above. */
+property F32   = join (H32::F (repeat 0x22) adrs (repeat 0x01)) == 0xe73a90dd672981c6073dff7000a31556e3bb142ff7f85d009f69061704c87d16
+property PRF32 = join (H32::PRF (repeat 0x22) (repeat 0x11) adrs) == 0x48f6663558978d71a7bf33e21ea8205aab2b9ad75405f9cf835cc92acbaa5468
+property H32p  = join (H32::H (repeat 0x22) adrs (repeat 0x05)) == 0x5aedef6de019f4f0ddfa12fbbc96c61d0144638f76e38a535786d9a1a524b760
+property Tl32  = join (H32::T_l (repeat 0x22) adrs (repeat 0x05 : [96][8])) == 0xe8895414658f8f03dbb29333cac95b60d96205343790dd28d80e65617ab4de20
+property Hm32  = join (H32::H_msg (repeat 0x44) (repeat 0x22) (repeat 0x66) (repeat 0x07 : [10][8])) == 0x51fa06164a954b5ab85ecf10314733fb70a3a8847eb57649d2335bd401684478c1cc3858ff614ff77ad609c81653ab89da
+property Pm32  = join (H32::PRF_msg (repeat 0x99) (repeat 0x88) (repeat 0x07 : [10][8])) == 0x1fc1ff1405de38d18f5729866d15e2e9e0cda08b76c9ec92485374e93af10cb9

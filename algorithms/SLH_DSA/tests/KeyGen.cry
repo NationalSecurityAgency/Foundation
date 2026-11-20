@@ -1,0 +1,42 @@
+/*
+ * Description: These properties check SLH-DSA key generation [FIPS 205
+ * Section 9]. They confirm that the two keys share one public root and
+ * that a signature made under a generated key verifies against it.
+ */
+
+module algorithms::SLH_DSA::tests::KeyGen where
+
+import algorithms::SLH_DSA::Main as S where
+  type n = 16
+  type k = 2
+  type a = 2
+  type hp = 2
+  type d = 2
+
+/** A fixed secret seed for the tests. */
+skSeed : [16][8]
+skSeed = repeat 0x11
+
+/** A fixed secret prf value for the tests. */
+skPrf : [16][8]
+skPrf = repeat 0x44
+
+/** A fixed public seed for the tests. */
+pkSeed : [16][8]
+pkSeed = repeat 0x22
+
+/**
+ * The public root sits inside both keys. The last n bytes of the public
+ * key are the same bytes as the final n bytes of the secret key.
+ */
+property keygen_keys_share_one_root =
+  drop`{16} pk == take`{16} (drop`{48} sk)
+  where (sk, pk) = S::slhKeyGen skSeed skPrf pkSeed
+
+/** A signature made under a generated key verifies against that key. */
+property keygen_signs_and_verifies =
+  S::slhVerify pkSeed root msg (S::slhSign skSeed skPrf pkSeed root msg)
+  where
+    (_, pk) = S::slhKeyGen skSeed skPrf pkSeed
+    root = drop`{16} pk
+    msg = [0xDE, 0xAD, 0xBE, 0xEF]
