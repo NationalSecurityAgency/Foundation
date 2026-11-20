@@ -1,0 +1,126 @@
+/*
+ * Description: This is a Cryptol specification for the HMAC-based
+ * Extract-and-Expand Key Derivation Function (HKDF) [RFC5869], built
+ * on a keyed-Hash Message Authentication Code (HMAC)
+ * [FIPS-PUB-198-1].
+ */
+
+module algorithms::HKDF::Main where
+
+/**
+ * The extract step of HKDF takes the input keying material `IKM` and
+ * "extracts" from it a fixed-length pseudorandom key `PRK`
+ * [RFC5869 Section 2.2].
+ *
+ * Inputs:
+ *   `HMAC`: The HMAC used as the pseudorandom function. Its output
+ *       is `HashLen` bytes.
+ *   `salt`: Optional salt value (a non-secret random value). If not
+ *       provided, it is set to a string of `HashLen` zero bytes.
+ *   `IKM`: Input keying material.
+ *
+ * Outputs:
+ *   `PRK`: A pseudorandom key of `HashLen` bytes.
+ *
+ * Types:
+ *   `HashLen`: Length of the output of the HMAC in bytes.
+ *   `s`      : Length of `salt` in bytes.
+ *   `i`      : Length of `IKM` in bytes.
+ */
+HKDF_Extract :
+    { HashLen, s, i }
+    ( fin HashLen, fin s, fin i )
+ => ([s][8] -> [i * 8] -> [HashLen * 8])  // HMAC keyed with `salt`
+ -> [s][8]                                // `salt`
+ -> [i][8]                                // `IKM`
+ -> [HashLen][8]                          // `PRK`
+HKDF_Extract HMAC salt IKM = split (HMAC salt (join IKM))
+
+/**
+ * The expand step of HKDF expands the pseudorandom key `PRK` into
+ * `L` bytes of output keying material `OKM`, bound to the optional
+ * context and application specific information `info`
+ * [RFC5869 Section 2.3]:
+ *
+ *     N = ceil(L/HashLen)
+ *     T = T(1) | T(2) | T(3) | ... | T(N)
+ *     OKM = first L octets of T
+ *
+ * where `T(0)` is the empty string and
+ * `T(i) = HMAC-Hash(PRK, T(i-1) | info | i)` with `i` a single
+ * octet.
+ *
+ * Inputs:
+ *   `HMAC1, HMACi`: The same HMAC using different length text
+ *       inputs, used to compute `T(1)` and `T(i)` (for `i > 1`)
+ *       respectively. Each has an output of `HashLen` bytes.
+ *   `PRK`: A pseudorandom key of at least `HashLen` bytes (usually,
+ *       the output from `HKDF_Extract`).
+ *   `info`: Optional context and application specific information
+ *       (can be a zero-length string).
+ *
+ * Outputs:
+ *   `OKM`: Output keying material of `L` bytes.
+ *
+ * Types:
+ *   `HashLen`: Length of the output of the HMAC in bytes.
+ *   `L`      : Length of the output keying material in bytes,
+ *              `L <= 255 * HashLen`.
+ *   `p`      : Length of `PRK` in bytes.
+ *   `n`      : Length of `info` in bytes.
+ */
+HKDF_Expand :
+    { HashLen, L, p, n }
+    ( fin HashLen, HashLen >= 1
+    , fin L, L >= 1, L <= 255 * HashLen
+    , fin p, p >= HashLen
+    , fin n
+    )
+ => ([p][8] -> [n * 8 + 8] -> [HashLen * 8])            // `HMAC1`
+ -> ([p][8] -> [HashLen * 8 + n * 8 + 8] -> [HashLen * 8])  // `HMACi`
+ -> [p][8]                                              // `PRK`
+ -> [n][8]                                              // `info`
+ -> [L][8]                                              // `OKM`
+HKDF_Expand HMAC1 HMACi PRK info = OKM
+  where
+    type N = L /^ HashLen
+    T1     = HMAC1 PRK (join info # 0x01)
+    T      : [N][HashLen * 8]
+    T      = [T1] # [ HMACi PRK (Tprev # join info # i)
+                    | Tprev <- T
+                    | i     <- drop`{1} ([1 .. N] : [N][8])
+                    ]
+    OKM    = split (take`{L * 8} (join T))
+
+/**
+ * HKDF follows the "extract-then-expand" paradigm, where the KDF
+ * logically consists of two modules: `HKDF_Extract` followed by
+ * `HKDF_Expand` [RFC5869 Section 2].
+ *
+ * Inputs:
+ *   `HMAC0`: The HMAC used by `HKDF_Extract`.
+ *   `HMAC1, HMACi`: The HMACs used by `HKDF_Expand`.
+ *   `salt`: Optional salt value. If not provided, it is set to a
+ *       string of `HashLen` zero bytes.
+ *   `IKM`: Input keying material.
+ *   `info`: Optional context and application specific information
+ *       (can be a zero-length string).
+ *
+ * Outputs:
+ *   `OKM`: Output keying material of `L` bytes.
+ */
+HKDF :
+    { HashLen, L, s, i, n }
+    ( fin HashLen, HashLen >= 1
+    , fin L, L >= 1, L <= 255 * HashLen
+    , fin s, fin i, fin n
+    )
+ => ([s][8] -> [i * 8] -> [HashLen * 8])            // `HMAC0`
+ -> ([HashLen][8] -> [n * 8 + 8] -> [HashLen * 8])  // `HMAC1`
+ -> ([HashLen][8] -> [HashLen * 8 + n * 8 + 8] -> [HashLen * 8])
+ -> [s][8]                                          // `salt`
+ -> [i][8]                                          // `IKM`
+ -> [n][8]                                          // `info`
+ -> [L][8]                                          // `OKM`
+HKDF HMAC0 HMAC1 HMACi salt IKM info =
+    HKDF_Expand HMAC1 HMACi (HKDF_Extract HMAC0 salt IKM) info
